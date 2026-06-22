@@ -1,0 +1,7 @@
+$ git config --global --list
+init.defaultbranch=main
+user.name=Pat Researcher
+user.email=pat@example.edu
+pull.rebase=false
+push.autosetupremote=true
+core.autocrlf=input

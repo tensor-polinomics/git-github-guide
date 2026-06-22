@@ -1,17 +1,215 @@
 # What Git Is and Why Researchers Need It
 
-::: {.callout-note appearance="minimal"}
-**Chapter status:** stub. Scope: Git as a versioning tool, and the specific pains it solves for empirical researchers.
+Open the folder where your last paper lived. If it looks anything
+like most researchers' folders, you will find a small graveyard:
+
+```
+paper.docx
+paper_v2.docx
+paper_v2_JM_edits.docx
+paper_FINAL.docx
+paper_FINAL_v2.docx
+paper_FINAL_actually_this_one.docx
+analysis_old/
+analysis_new/
+analysis_new_DONT_DELETE/
+```
+
+Every name in that list is a human being trying to do version
+control by hand, and failing in a predictable way. You cannot tell
+which file made the table in the submitted PDF. You cannot tell what
+changed between `v2` and `FINAL`. If your coauthor edited
+`paper_FINAL.docx` while you edited `paper_FINAL_v2.docx`, merging
+the two is an evening of copy-pasting and praying. This chapter is
+about the tool that makes the graveyard unnecessary. It does not
+assume you have installed anything yet; installation is Chapter 4.
+The aim here is only to convince you the tool is worth installing.
+
+## What Git actually is
+
+Git is a **version control system**: a program that records the full
+history of a project as a series of snapshots, so you can see what
+changed, when, and why, and return to any earlier state on demand. A
+single saved snapshot is called a **commit**. Instead of a folder
+full of `_FINAL_v2` files, you keep one folder and let Git remember
+every version of it for you.
+
+The whole history lives in a hidden `.git` subfolder inside your
+project. That collection of snapshots is called a **repository**, or
+repo. Crucially, it is all on your own machine: Git was built to work
+with no network at all. GitHub, the website most people associate
+with Git, is a separate thing, a place to put a copy of your repo so
+others can see it. You can do months of real, version-controlled
+research before you ever touch GitHub, and this book deliberately
+keeps it out of the picture until Chapter 9.
+
+Here is what the history of a real project looks like. This is the
+running example used throughout the book, a simulated minimum-wage
+study, viewed with one command. You will learn to produce this
+yourself in Chapter 5; for now just read it.
+
+```bash
+$ git log --oneline
+dcb18de Note headline result in README
+f9a193f Add DiD analysis, report, and main table
+758175e Add polars cleaning script
+20c7835 Set up project skeleton and data generator
+```
+
+Four snapshots, newest on top, each with a short fingerprint (the
+**hash**, like `dcb18de`) and a one-line message saying what that
+snapshot accomplished. That is the entire project's life story in
+four lines: skeleton, cleaning, analysis, write-up. Nobody had to
+name a file `_FINAL`. The history is the record.
+
+And at any moment you can ask Git where things stand:
+
+```bash
+$ git status
+On branch main
+nothing to commit, working tree clean
+```
+
+"Working tree clean" means every change you have made is already
+saved into a commit. That single line is the calm you are buying:
+proof that nothing is unsaved and nothing is lost.
+
+## What versioning actually buys a researcher
+
+The `_FINAL_v2` habit is not just ugly. It fails at the specific
+things empirical research needs. Git succeeds at each one.
+
+**A trustworthy record of what produced a result.** When a referee
+asks "which version of the code made Table 3?", a folder of dated
+files cannot answer honestly. A Git history can: the commit that
+added the table is right there, and you can return the whole project
+to that exact state and rerun it. The link between a result and the
+code that produced it stops being a matter of memory.
+
+**Fearless experimentation.** The reason people hoard
+`analysis_new_DONT_DELETE/` folders is fear: if I change this, can I
+get the old version back? With Git the answer is always yes, so you
+stop hoarding. You try the alternative specification, and if it is
+worse you discard it in one command and the previous state returns
+untouched. Chapter 7 shows how **branches** let you run a whole
+speculative line of work in parallel and either keep it or throw it
+away.
+
+**Real collaboration without overwrites.** When two coauthors edit a
+shared Dropbox file at the same time, one person's work silently
+wins and the other's is gone, or Dropbox saves a baffling "conflicted
+copy." Git was designed for exactly this case: it merges independent
+changes automatically and, when two people truly changed the same
+line, it stops and asks you to choose rather than picking for you.
+Chapters 9 to 12 build this up.
+
+**An honest message attached to every change.** Each commit carries
+a message, so the history explains itself: not just that the data
+file changed, but that you "dropped counties with fewer than 100
+teens." Six months later that log is often more useful than your
+own memory of what you were thinking.
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+A committed result is tied to the exact state of every script that
+produced it. If your `git log` says the main table came from commit
+`f9a193f`, you can return the project to `f9a193f` and regenerate it.
+That is the difference between "the figure in the paper" and "a
+figure I can reproduce from a known, labelled state of the code." A
+reproducible project is one where the history, not your memory, is
+the source of truth.
 :::
 
-<!-- DRAFTING NOTES (remove on final)
-Running example: minimum-wage DiD project in ../sandbox.
-Tier each technical section with ::: {.tier-beginner} / {.tier-advanced}.
-Use PITFALL / RECOVERY / REPRODUCIBILITY callouts.
-Every command block: command + REAL output + one sentence why.
-Wrap code/terminal to ~64 chars. No em-dashes.
--->
+## Git versus the things you are using instead
+
+Most researchers already use *something* to manage versions and
+share files. It helps to be precise about what those tools do and do
+not do, compared with Git.
+
+| Tool | Keeps full history? | Merges concurrent edits? | Records why a change was made? |
+|---|---|---|---|
+| Renaming files (`_v2`, `_FINAL`) | Only what you manually kept | No | Only in the filename |
+| Dropbox / Google Drive | Limited, time-based versions | No (last save wins, or "conflicted copy") | No |
+| Emailing files around | Scattered across inboxes | No | In the email body, if at all |
+| Track Changes in Word | Within one document only | One reviewer at a time | Per edit, but not project-wide |
+| Git | Yes, every commit, forever | Yes, line by line | Yes, a message per commit |
+
+Dropbox and Google Drive are genuinely useful, and they do keep some
+version history. But their history is time-based and shallow ("the
+file as it was last Tuesday"), not meaning-based ("the version where
+I switched to clustered standard errors"), and they have no concept
+of merging two people's simultaneous code edits. They are good at
+syncing files. They are not version control for a code-driven
+analysis.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+A tempting non-solution is to put your project folder inside Dropbox
+and also use Git inside it. This usually backfires: Dropbox and Git
+both try to manage the same hidden `.git` folder, and Dropbox can
+sync it mid-write and corrupt the repository. Pick one tool to own
+the project. If you want both a Git history and cloud backup, the
+right pattern is Git plus a remote like GitHub (Chapter 9), not Git
+nested inside a file-syncing folder.
+:::
+
+## What Git does not do
+
+Git earns trust partly by being honest about its limits. It is a
+versioning tool for **text**: source code, scripts, LaTeX, Markdown,
+small configuration files. Several things researchers care about fall
+outside that, and pretending otherwise is how repositories get
+ruined.
+
+**Git does not version large data well.** Git was built for text it
+can compare line by line. A multi-megabyte CSV or a binary `.dta`
+gets stored as an opaque lump, and every revision stores another full
+lump, so the repository balloons and never shrinks. GitHub will warn
+above 50 MiB and reject files over 100 MiB outright. Data needs a
+different home: a regenerating script, Git LFS, or a data repository
+with a DOI. Chapter 8 covers the options.
+
+**Git does not reproduce your software environment.** A commit
+records your code, not the versions of polars, pyfixest, or R that
+ran it. Code that reproduced a number last year can produce a
+different number after a library update. Reproducibility needs the
+code (Git) *and* a pinned environment (a lockfile such as `uv.lock`
+or `renv.lock`). This pairing is the spine of Chapter 8.
+
+**Git does not store secrets safely.** Anything you commit is in the
+history, and history is sticky: deleting a file in a later commit
+does not remove it from earlier ones. An API key or a password
+committed once must be treated as leaked and rotated, even after you
+"delete" it. Chapter 6 is entirely about what must never be committed
+and how to clean up if it was.
+
+The one-sentence version: **Git versions the text that describes your
+research; it does not, by itself, carry your data or your
+environment.** Keep that line in mind and most beginner disasters
+never happen.
+
+## What you can now do
+
+You can say what Git is (a system that records your project as a
+history of commits), name the concrete things versioning buys a
+researcher (a trustworthy record, fearless experimentation, real
+collaboration, a self-explaining log), and state plainly what Git
+does not handle (large data, software environments, secrets). That is
+enough motivation to install it. Chapter 3 draws the mental model
+that makes the commands feel obvious, and Chapter 4 gets Git running
+on your machine.
 
 ## Try it yourself {.unnumbered}
 
-_Exercise tied to the running example will go here._
+No Git required yet; this is a paper exercise.
+
+1. Open the folder of your most recent project or paper. List every
+   file or folder whose name encodes a version by hand (`_v2`,
+   `_FINAL`, `_old`, a date, initials). For each one, write the
+   single commit message it *should* have had.
+2. Find one moment in that project where you lost work, overwrote a
+   coauthor, or could not tell which file made a result. Write two
+   sentences on which capability from this chapter would have
+   prevented it.
+3. List the three largest files in the project. For each, decide
+   whether it is text Git should version or data that belongs
+   elsewhere (look ahead to Chapter 8 if unsure). This is the
+   judgment that keeps a research repo healthy.

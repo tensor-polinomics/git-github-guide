@@ -1,0 +1,33 @@
+$ git --version
+git version 2.53.0
+
+$ git config --global --get user.name
+<REDACTED_NAME>
+
+$ git config --global --get user.email
+<REDACTED_EMAIL>
+
+$ ssh-keygen -lf ~/.ssh/id_ed25519.pub
+ssh-keygen: /Users/<REDACTED_USER>/.ssh/id_ed25519.pub: No such file or directory
+
+$ ssh -T git@github.com
+Hi <REDACTED_GITHUB_USERNAME>! You've successfully authenticated, but GitHub does not provide shell access.
+
+$ find ~/.ssh -maxdepth 1 -type f -name '*.pub' -print
+/Users/<REDACTED_USER>/.ssh/id_ed25519_work.pub
+/Users/<REDACTED_USER>/.ssh/id_ed25519_personal.pub
+
+$ ssh-keygen -lf ~/.ssh/id_ed25519_work.pub
+256 SHA256:REDACTED-WORK-FINGERPRINT <REDACTED_COMMENT> (ED25519)
+
+$ ssh-keygen -lf ~/.ssh/id_ed25519_personal.pub
+256 SHA256:REDACTED-PERSONAL-FINGERPRINT <REDACTED_COMMENT> (ED25519)
+
+# Provenance: captured on the user's Mac (path A), 2026-06-22.
+# Name/email/username/user/key-comments redacted by the user; the two
+# public-key SHA256 fingerprints further redacted here because
+# transcripts/ is a public directory. The default ~/.ssh/id_ed25519.pub
+# does NOT exist on this machine (named work/personal keys instead),
+# which is why the first ssh-keygen -lf errors. The ssh -T run shown is
+# the approved read-only network run on the Mac (the in-sandbox attempt
+# failed on DNS, as expected: the sandbox cannot reach github.com).

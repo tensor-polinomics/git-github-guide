@@ -1,0 +1,21 @@
+$ ssh-keygen -t ed25519 -C "pat@example.edu"
+Generating public/private ed25519 key pair.
+Your identification has been saved in ~/.ssh/id_ed25519
+Your public key has been saved in ~/.ssh/id_ed25519.pub
+The key fingerprint is:
+SHA256:REDACTED-FINGERPRINT pat@example.edu
+The key's randomart image is:
++--[ED25519 256]--+
+|           o +B.*|
+|          o +=o*o|
+|        o  ++o.+o|
+|       . o o. oo.|
+|        S o   .=E|
+|         . o  ..=|
+|        . . o  o*|
+|        .o o ...@|
+|        .o.+=  ++|
++----[SHA256]-----+
+
+$ ssh-keygen -lf ~/.ssh/id_ed25519.pub
+256 SHA256:REDACTED-FINGERPRINT pat@example.edu (ED25519)

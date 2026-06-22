@@ -1,17 +1,388 @@
 # Installation and Setup
 
+This chapter gets Git running on your machine and configured the way
+a researcher actually wants it. There are four jobs: install Git,
+tell it who you are, set a few sensible defaults, and create an SSH
+key so that later, when you connect to GitHub (Chapter 9), you never
+have to paste a password. Do these once per machine and forget them.
+
+A note on the terminal output below. Git behaves slightly
+differently across operating systems, and this book refuses to
+fabricate output. So the Linux blocks are run live on a Linux machine
+(Git 2.34.1) and shown verbatim; the macOS-specific and
+GitHub-account steps are run on the author's Mac and pasted with
+secrets redacted; and the Windows steps, which cannot be run on the
+build machine, are described from the official Git and GitHub docs and
+flagged as not-locally-run. Where a command's output is identical
+across systems, one capture stands in for all.
+
+## Step 1: install Git {.tier-beginner}
+
+Pick your operating system. The goal of this step is simply that the
+next command works.
+
+**macOS.** The cleanest route is Homebrew: `brew install git`. If you
+have ever installed Apple's Xcode Command Line Tools you already have
+a Git, though often an older one, so installing through Homebrew and
+letting it take precedence on your `PATH` is worth it. (The author's
+Mac uses the Homebrew Git throughout this book.)
+
+**Linux (Debian / Ubuntu).** Git is in the system package manager:
+
+```bash
+$ sudo apt-get update && sudo apt-get install git
+```
+
+On Fedora or RHEL the equivalent is `sudo dnf install git`. Many
+scientific Linux machines, including the one used to build this book,
+ship Git already.
+
+**Windows.** Download "Git for Windows" from
+[git-scm.com/download/win](https://git-scm.com/download/win) and run
+the installer. It bundles **Git Bash**, a small Unix-style shell, and
+this book assumes you run Git commands inside Git Bash so that the
+commands match across all three operating systems. The installer also
+offers Git Credential Manager (accept it) and a line-ending setting
+(see the pitfall below). These Windows installer screens are
+documented from the official Git for Windows project and are not run
+on the build machine.
+
 ::: {.callout-note appearance="minimal"}
-**Chapter status:** stub. Scope: Install on Windows, macOS, Linux; SSH keys; identity config; sensible global defaults.
+Windows steps in this chapter are documented from official docs and
+flagged, never captured live, because the build machine is
+Linux/macOS only. Everything else is real captured output. The
+underlying Git commands are identical on all three systems; only the
+installer and a couple of defaults differ.
 :::
 
-<!-- DRAFTING NOTES (remove on final)
-Running example: minimum-wage DiD project in ../sandbox.
-Tier each technical section with ::: {.tier-beginner} / {.tier-advanced}.
-Use PITFALL / RECOVERY / REPRODUCIBILITY callouts.
-Every command block: command + REAL output + one sentence why.
-Wrap code/terminal to ~64 chars. No em-dashes.
--->
+Whatever the platform, verify the install with one command. This is
+real output from the Linux build machine:
+
+```bash
+$ git --version
+git version 2.34.1
+```
+
+Any reasonably recent version (2.28 or newer) has everything this
+book uses. The same command on the author's Mac (Homebrew Git) shows
+a newer release, which is exactly what you want:
+
+```bash
+$ git --version
+git version 2.53.0
+```
+
+Run it on your own machine and confirm you get a version line rather
+than "command not found." The version number will differ; anything
+2.28 or newer is fine.
+
+## Step 2: tell Git who you are {.tier-beginner}
+
+Git stamps every commit with a name and email. Until you set them, it
+refuses to commit at all. This is the first wall most beginners hit,
+so here it is on purpose:
+
+```bash
+$ git commit -m "First commit"
+Author identity unknown
+
+*** Please tell me who you are.
+
+Run
+
+  git config --global user.email "you@example.com"
+  git config --global user.name "Your Name"
+
+to set your account's default identity.
+Omit --global to set the identity only in this repository.
+
+fatal: unable to auto-detect email address (got 'adoring-youthful-fermat@claude.(none)')
+```
+
+The fix is the two commands Git just told you to run. Set them once
+with `--global` and every repository on the machine inherits them.
+Use your real name and an email you are happy to have public in the
+project history (the same one you will use for GitHub):
+
+```bash
+$ git config --global user.name "Pat Researcher"
+$ git config --global user.email "pat@example.edu"
+$ git config --global --get user.name
+Pat Researcher
+$ git config --global --get user.email
+pat@example.edu
+```
+
+Setting a value prints nothing; reading it back with `--get`
+confirms it stuck. Substitute your own name and email.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+The name and email are baked into each commit and travel with the
+history forever; they are not a login and changing them later does
+not rewrite past commits. If you commit a few times with the wrong
+email (a common one is a throwaway address that does not match your
+GitHub account, so your commits do not link to your profile), fix the
+config now so future commits are right. Rewriting the email on old
+commits is a history-rewrite operation (Chapter 6) and is rarely
+worth it for a private project.
+:::
+
+## Step 3: set sensible defaults {.tier-beginner}
+
+A handful of global settings save real pain later. First set the
+defaults that are the same on every platform:
+
+```bash
+$ git config --global init.defaultBranch main
+$ git config --global pull.rebase false
+$ git config --global push.autoSetupRemote true
+```
+
+Then set the line-ending rule for your operating system. On macOS or
+Linux, use:
+
+```bash
+$ git config --global core.autocrlf input
+```
+
+On Windows, use:
+
+```bash
+$ git config --global core.autocrlf true
+```
+
+Each line is silent on success. Taken together these settings make Git
+behave the way the rest of this book assumes:
+
+`init.defaultBranch main` makes every new repository start on a
+branch called `main`. Since Git 2.28 the initial branch name is
+configurable; if you leave it unset, Git uses `master` and nags you
+about it every time you create a repo. Watch the difference. Before
+the setting, `git init` prints a hint and uses `master`:
+
+```bash
+$ git config --global --get init.defaultBranch
+
+$ git init demo-before
+hint: Using 'master' as the name for the initial branch. This default branch name
+hint: is subject to change. To configure the initial branch name to use in all
+hint: of your new repositories, which will suppress this warning, call:
+hint:
+hint: 	git config --global init.defaultBranch <name>
+hint:
+hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+hint: 'development'. The just-created branch can be renamed via this command:
+hint:
+hint: 	git branch -m <name>
+Initialized empty Git repository in demo-before/.git/
+```
+
+After the setting, the hint is gone and the branch is `main`:
+
+```bash
+$ git config --global init.defaultBranch main
+$ git init demo-after
+Initialized empty Git repository in demo-after/.git/
+$ git -C demo-after symbolic-ref --short HEAD
+main
+```
+
+`pull.rebase false` makes `git pull` merge by default, which is the
+safe, predictable choice while you are learning; Chapter 7 explains
+when you might prefer rebasing. `push.autoSetupRemote true` lets the
+first `git push` of a new branch create its remote counterpart
+without extra flags, which removes a common beginner snag in
+Chapter 9. `core.autocrlf` is the line-ending setting, covered next.
+
+You can see the whole assembled configuration at any time:
+
+```bash
+$ git config --global --list
+init.defaultbranch=main
+user.name=Pat Researcher
+user.email=pat@example.edu
+pull.rebase=false
+push.autosetupremote=true
+core.autocrlf=input
+```
+
+::: {.callout-warning .pitfall title="PITFALL"}
+**Line endings differ across operating systems** and can make Git
+report that an entire file changed when nothing meaningful did.
+Windows ends lines with carriage-return + line-feed (CRLF); macOS and
+Linux use a bare line-feed (LF). The fix is `core.autocrlf`: set it to
+`input` on macOS and Linux (commit LF, leave your files alone) and to
+`true` on Windows (check out CRLF, commit LF). This is one of the few
+settings that genuinely differs by platform.
+:::
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+`core.autocrlf` is a per-person setting, so it cannot guarantee that
+collaborators on different operating systems behave the same way. The
+durable, project-level fix is a `.gitattributes` file committed to
+the repo with a line like `* text=auto`. Because it lives in the
+repository, it overrides everyone's personal `core.autocrlf` and
+makes line-ending handling part of the project, not the machine. Put
+it in once and cross-platform coauthors stop generating phantom
+whole-file diffs.
+:::
+
+## Step 4: set up SSH for GitHub {.tier-beginner}
+
+You will not touch GitHub until Chapter 9, but the key you create now
+is what lets you connect then without typing a password on every
+push. The setup is: make a key pair, give GitHub the public half, and
+test it.
+
+### SSH or HTTPS?
+
+GitHub lets you connect over either SSH or HTTPS. They are equivalent
+in capability; the difference is how you authenticate. With **SSH**
+you generate a key pair once, register the public key with GitHub, and
+never think about it again. With **HTTPS** you authenticate with a
+credential helper that stores a token: Git Credential Manager on
+Windows and macOS, the macOS keychain (`osxkeychain`) on a Mac, or a
+helper you install on Linux. This book uses **SSH** as the primary
+path because it is the same on every platform and avoids token
+juggling. If you prefer HTTPS, install Git Credential Manager and skip
+to Chapter 9; the rest works the same.
+
+### Create a key pair
+
+`ssh-keygen` makes the pair. Use the modern `ed25519` type and put
+your email in the comment so you can recognise the key later. This is
+real output (the private key is never displayed, and the public
+fingerprint is redacted here):
+
+```bash
+$ ssh-keygen -t ed25519 -C "pat@example.edu"
+Generating public/private ed25519 key pair.
+Your identification has been saved in ~/.ssh/id_ed25519
+Your public key has been saved in ~/.ssh/id_ed25519.pub
+The key fingerprint is:
+SHA256:REDACTED-FINGERPRINT pat@example.edu
+The key's randomart image is:
++--[ED25519 256]--+
+|           o +B.*|
+|          o +=o*o|
+|        o  ++o.+o|
+|       . o o. oo.|
+|        S o   .=E|
+|         . o  ..=|
+|        . . o  o*|
+|        .o o ...@|
+|        .o.+=  ++|
++----[SHA256]-----+
+```
+
+The interactive prompts for the file location and a passphrase are
+not shown in the capture above (the key was generated
+non-interactively so nothing secret was typed). On your own machine
+you will see them: press Enter to accept the default location, and at
+the passphrase prompt set a passphrase, which encrypts the private
+key on disk, so use one. This writes two files: `~/.ssh/id_ed25519`
+(the **private** key, which never leaves your machine and must never
+be shared or committed) and `~/.ssh/id_ed25519.pub` (the **public**
+key, which is safe to hand out).
+
+`id_ed25519` is just the **default** filename, not a law. If you ever
+expect more than one key on a machine (a common case: separate work
+and personal GitHub accounts), name them when you create them with
+`-f`, for example `ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_work`.
+Then the rest of this section uses your chosen name in place of
+`id_ed25519`. The next subsection shows how to find whatever you
+actually have, rather than assuming the default exists.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+The two keys are not interchangeable. You give GitHub the `.pub`
+(public) file only. If you ever paste the file *without* `.pub`, you
+have leaked your private key and must delete the pair and start over.
+A private key is a secret on the same level as a password: never email
+it, never commit it, never paste it into a chat or an issue.
+:::
+
+### Find the key you actually have
+
+Do not assume `~/.ssh/id_ed25519.pub` exists. On the author's Mac it
+does not, because that machine uses named work and personal keys.
+Asking for the default name by reflex just errors (real macOS output,
+username redacted):
+
+```bash
+$ ssh-keygen -lf ~/.ssh/id_ed25519.pub
+ssh-keygen: /Users/<REDACTED_USER>/.ssh/id_ed25519.pub: No such file or directory
+```
+
+So list what is really there first, then fingerprint each one. This
+is the real layout on that Mac (two named keys, fingerprints and
+comments redacted):
+
+```bash
+$ find ~/.ssh -maxdepth 1 -type f -name '*.pub' -print
+/Users/<REDACTED_USER>/.ssh/id_ed25519_work.pub
+/Users/<REDACTED_USER>/.ssh/id_ed25519_personal.pub
+
+$ ssh-keygen -lf ~/.ssh/id_ed25519_work.pub
+256 SHA256:REDACTED-WORK-FINGERPRINT <REDACTED_COMMENT> (ED25519)
+```
+
+The lesson: find your `.pub` files, identify the one for this
+account, and use that exact filename in the commands below.
+
+### Give GitHub the public key
+
+Copy the contents of the **public** key you just identified and add
+it on GitHub under Settings, "SSH and GPG keys", "New SSH key". Using
+the named work key as the example: on macOS,
+`pbcopy < ~/.ssh/id_ed25519_work.pub`; on Linux use `xclip`; on
+Windows Git Bash, `clip < ~/.ssh/id_ed25519_work.pub`. Substitute
+your own filename. The GitHub web steps are documented here rather
+than captured, since they happen in the browser on your own account.
+
+### Test the connection
+
+Once the key is registered, test it. This is real output from the
+author's Mac, with the GitHub username redacted:
+
+```bash
+$ ssh -T git@github.com
+Hi <REDACTED_GITHUB_USERNAME>! You've successfully authenticated, but GitHub does not provide shell access.
+```
+
+The redacted name will be your own GitHub login. The "does not
+provide shell access" line is not an error: it is GitHub confirming
+the key works
+and that SSH is only for Git, not for logging into a server. On the
+very first connection ssh also asks you to confirm GitHub's host
+fingerprint; type `yes`. If instead you see "Permission denied
+(publickey)", the key was not registered correctly; recheck that you
+pasted the `.pub` file.
+
+## What you can now do
+
+Git is installed, it knows who you are, it starts repositories on
+`main` without nagging, it handles line endings sanely, and you have
+an SSH key ready for GitHub. You have done the one-time setup that the
+rest of the book assumes on every machine you work on. Chapter 5 puts
+this to work: the daily loop of staging and committing in the running
+example.
 
 ## Try it yourself {.unnumbered}
 
-_Exercise tied to the running example will go here._
+On the machine you actually work on:
+
+1. Run `git --version` and confirm you get a version line of 2.28 or
+   newer. If not, install or update Git for your platform.
+2. Set your name and email with `git config --global`, then read them
+   back with `git config --global --get user.name` and `--get
+   user.email`. Confirm they match the email you will use on GitHub.
+3. Run the three shared sensible-defaults commands plus the
+   `core.autocrlf` command for your operating system. Then run
+   `git config --global --list` and find each setting you just made
+   in the output.
+4. Create an `ed25519` SSH key with a passphrase (name it with `-f`
+   if you may end up with more than one). Run `find ~/.ssh -name
+   '*.pub'` to list your public keys, then `ssh-keygen -lf <that
+   file>` to read its fingerprint without revealing the key. Add the
+   public key to GitHub and run `ssh -T git@github.com`; confirm the
+   "successfully authenticated" line names your username.
