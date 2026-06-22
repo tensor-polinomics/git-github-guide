@@ -1,0 +1,67 @@
+project:
+  type: book
+  output-dir: _book
+
+book:
+  title: "Git and GitHub for Social Science Researchers"
+  subtitle: "A reproducibility-first guide for economics, finance, accounting, and the social sciences"
+  author: "tensor.polinomics"
+  date: today
+  search: true
+  reader-mode: true
+  page-footer:
+    left: "Built with Quarto. Reproducibility first."
+  sidebar:
+    style: docked
+    collapse-level: 1
+  chapters:
+    - index.qmd
+    - part: "Foundations"
+      chapters:
+        - chapters/01-reproducibility.qmd
+        - chapters/02-why-git.qmd
+        - chapters/03-mental-model.qmd
+    - part: "Working with Git"
+      chapters:
+        - chapters/04-install-setup.qmd
+        - chapters/05-git-beginners.qmd
+        - chapters/06-never-commit.qmd
+        - chapters/07-git-advanced.qmd
+        - chapters/08-data-environments.qmd
+    - part: "Working with GitHub"
+      chapters:
+        - chapters/09-git-to-github.qmd
+        - chapters/10-github-beginners.qmd
+        - chapters/11-github-advanced.qmd
+        - chapters/12-collaboration.qmd
+    - part: "Research Workflows"
+      chapters:
+        - chapters/13-worktrees-submodules.qmd
+        - chapters/14-toolchain.qmd
+        - chapters/15-replication-package.qmd
+        - chapters/16-ai-age.qmd
+        - chapters/17-disasters-recovery.qmd
+    - part: "Reference"
+      chapters:
+        - cheatsheet.qmd
+        - checklist.qmd
+
+format:
+  html:
+    theme:
+      - cosmo
+      - includes/custom.scss
+    toc: true
+    toc-depth: 3
+    code-copy: true
+    code-overflow: wrap
+    df-print: kable
+    default-image-extension: svg
+  pdf:
+    documentclass: scrreprt
+    keep-tex: false
+    default-image-extension: pdf
+
+execute:
+  freeze: auto
+  echo: true

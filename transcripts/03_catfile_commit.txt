@@ -1,0 +1,7 @@
+$ git cat-file -p HEAD
+tree 5c2b271dba406fa5181d962342644d8a7799d0b2
+parent f9a193f0ac3e4535babbb484bf65feecba5d2582
+author Pat Researcher <pat@example.edu> 1780570800 +0000
+committer Pat Researcher <pat@example.edu> 1780570800 +0000
+
+Note headline result in README

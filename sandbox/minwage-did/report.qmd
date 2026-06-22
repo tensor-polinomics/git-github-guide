@@ -1,0 +1,36 @@
+---
+title: "Minimum Wage and Teen Employment"
+subtitle: "A difference-in-differences example"
+format: html
+---
+
+## Question
+
+Did the January 2019 minimum-wage increase reduce the teen
+employment rate in treated counties? We estimate a two-way
+fixed-effects difference-in-differences model on a simulated
+county-month panel.
+
+## Specification
+
+$$
+\text{emp}_{it} = \beta\,(\text{treat}_i \times \text{post}_t)
+  + \alpha_i + \gamma_t + \varepsilon_{it}
+$$
+
+with county fixed effects $\alpha_i$, month fixed effects
+$\gamma_t$, and standard errors clustered by county.
+
+## Result
+
+```{python}
+#| echo: false
+from pathlib import Path
+print(Path("output/tables/did_main.txt").read_text())
+```
+
+The estimated effect is a fall of about 1.9 percentage points
+in the teen employment rate, consistent with the value built
+into the simulation.
+
+![Treated vs control means](output/figures/event_means.png)

@@ -1,0 +1,10 @@
+$ git add README.md
+$ git commit -m "Note headline result in README"
+[main dcb18de] Note headline result in README
+ 1 file changed, 4 insertions(+)
+
+$ git log --oneline
+dcb18de Note headline result in README
+f9a193f Add DiD analysis, report, and main table
+758175e Add polars cleaning script
+20c7835 Set up project skeleton and data generator

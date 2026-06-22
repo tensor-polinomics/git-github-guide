@@ -1,0 +1,17 @@
+$ # (edited README.md: added a Results line)
+$ git status -s
+ M README.md
+
+$ git diff
+diff --git a/README.md b/README.md
+index 5f39412..cc7f10a 100644
+--- a/README.md
++++ b/README.md
+@@ -32,3 +32,7 @@ output/    tables and figures
+ Python 3.10+, with `polars`, `pyfixest`, `pandas`,
+ `matplotlib`. Pinned versions live in the project lockfile
+ (see Chapter 8).
++
++## Headline result
++
++Treated counties saw a fall of about 1.9 pp.

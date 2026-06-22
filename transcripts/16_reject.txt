@@ -1,0 +1,5 @@
+# Review caught a hard-coded absolute path. Reject the whole
+# edit and return to the known-good checkpoint.
+$ git restore scripts/02_analysis.py
+$ git status -s
+(clean again; nothing the agent did was committed)

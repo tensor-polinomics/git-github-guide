@@ -1,0 +1,256 @@
+# Data and Environments: The Reproducibility Gap
+
+By now the daily loop is familiar and your code is safely versioned.
+But Chapter 1 made a promise this chapter has to honour: Git versions
+*text*, and a reproducible project needs two things that are not text.
+It needs the **data** the code consumes, and it needs the **software
+environment** the code runs in. Neither belongs in Git as-is, and
+neither reproduces on its own. This chapter is about closing that gap:
+keeping data and environments out of your history while keeping your
+project rebuildable by someone who has neither.
+
+The thesis to carry through: a Git repository full of perfect code is
+necessary but not sufficient. If a collaborator clones it and cannot
+obtain the data or reconstruct the package versions, your work does not
+reproduce, and the gate from Chapter 1 stays shut.
+
+## The two things Git will not capture for you
+
+Git is built for files that are small, text, and meaningfully diffable:
+scripts, notes, manuscripts. Data and environments are none of these.
+
+Data is often large, frequently binary, and sometimes restricted
+(Chapter 6). Committing a dataset that changes weekly stores every
+version forever and bloats the repository permanently, and committing
+restricted data can breach a use agreement. The environment, your exact
+versions of Python or R and every package, is not a file you write at
+all; it is state on your machine that silently drifts as you upgrade.
+A result that ran under `polars 1.0` may not even execute under a later
+release. Each gap has its own set of tools. Take them in turn.
+
+## Data, strategy one: rebuild it from code {.tier-beginner}
+
+The cleanest solution to the data problem is to not store the data at
+all, but to store the *recipe* that produces it. When data is
+simulated, or derived deterministically from a public raw source, a
+script plus a fixed random seed is smaller, clearer, and more honest
+than the data file it generates.
+
+This is exactly how the running example works. Its raw data are built
+by a seeded generator, `scripts/00_make_data.py`, and the `.gitignore`
+keeps the generated files out of Git entirely. Anyone who clones the
+code-only repository rebuilds the inputs with one command:
+
+```bash
+$ uv run python scripts/00_make_data.py
+wrote data/raw/county_panel.csv  rows=960  counties=40  months=24
+$ uv run python scripts/01_clean.py
+wrote data/clean/analysis.parquet  rows=948  cols=7
+```
+
+The word "seeded" is doing the real work. Because the generator fixes
+its random seed, it produces the *same bytes* every time. Run it twice
+and the file is identical, which is what makes a downstream result
+reproducible rather than merely similar:
+
+```bash
+$ md5sum data/raw/county_panel.csv
+1b85815d831a97e7f04597a88e89cc50  data/raw/county_panel.csv
+$ uv run python scripts/00_make_data.py   # regenerate
+wrote data/raw/county_panel.csv  rows=960  counties=40  months=24
+$ md5sum data/raw/county_panel.csv        # same hash
+1b85815d831a97e7f04597a88e89cc50  data/raw/county_panel.csv
+```
+
+Same seed, same hash. And because the data and outputs are ignored,
+rebuilding them does not dirty the repository at all:
+
+```bash
+$ git status -s
+
+$ git status --ignored -s
+!! .venv/
+!! data/
+!! output/figures/
+```
+
+A clean `git status` after a full rebuild is the signal you want: the
+code is the version-controlled truth, and the data is a reproducible
+by-product of it.
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+"Rebuild from code" is the gold standard, but only if the recipe is
+complete and deterministic: a fixed seed, a pinned environment (below),
+and a raw source that is either generated or fetched from a stable,
+cited location. A script that downloads "the latest" version of a
+dataset is not reproducible, because "latest" changes. Pin the data
+version the same way you pin everything else.
+:::
+
+## Data, strategy two: when you genuinely cannot rebuild it {.tier-advanced}
+
+Real projects often use data that cannot be regenerated from a short
+script: a 40 GB administrative extract, licensed vendor data, a
+hand-collected survey. You still keep it out of Git, but now you need
+somewhere else to put it. The three options below are described from
+their documentation and are *not executed in this book's sandbox*
+(verified against vendor docs, access date 2026-06-21).
+
+**Git LFS (Large File Storage)** keeps large files in your normal Git
+workflow by committing a small *pointer* in place of each file, while
+the bytes live on a separate LFS store. It fits files that are large
+but still shareable and that you want tracked alongside code. The
+catch is cost and quota: GitHub's free tier includes only 1 GB of LFS
+storage and 1 GB of bandwidth per month, so a serious dataset will
+exceed it quickly. LFS is for a handful of moderately large tracked
+files, not a data lake.
+
+**DVC (Data Version Control)** is built for exactly the data-lake case.
+Like LFS it commits small metafiles (`.dvc` pointers) to Git, but it
+stores the actual data in external remote storage you control (S3,
+Google Drive, an SSH server), moved with `dvc push` and `dvc pull`. DVC
+versions large data and models without ever putting them in Git, and
+is the heavier, more capable tool when data versioning is itself part
+of the project.
+
+**A data repository with a DOI** is the right home for the *archived*
+version of record. Zenodo accepts up to 50 GB per record, mints a
+citable DOI, and can automatically archive a tagged GitHub release.
+Dataverse (for example Harvard Dataverse) plays the same role with
+institutional backing. This is less about day-to-day versioning and
+more about permanent, citable deposit, which is where Chapter 15 picks
+it up for the replication package.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+The decision is not "which tool is best" but "what kind of data is
+this." If it rebuilds from code, store the code (strategy one). If it
+is a few large but shareable files you actively version, consider LFS
+or DVC. If it is the final dataset behind a paper, deposit it in a
+repository with a DOI and cite it. What you must never do is the easy
+wrong thing: `git add` the raw data into history because it was
+convenient today. That is the mistake Chapter 6 exists to prevent, and
+it is permanent.
+:::
+
+## Capturing the environment: the lockfile {.tier-beginner}
+
+Now the second half of the gap. Even with the right code and the right
+data, a result is not reproducible unless the reader can run it under
+the same software. The answer is a **lockfile**: a machine-written
+record of the exact version of every package (and its dependencies)
+your project uses. You do not write it by hand; your package manager
+writes it, and you commit it.
+
+This book's example uses `uv`, and its lockfile is `uv.lock`. Until now
+that file has lived in the working tree but stayed out of the example's
+committed history, so that the earlier chapters' demos saw a clean
+four-commit project. This chapter is where the environment formally
+enters the record, and it is worth doing carefully, because committing
+it changes the project's history.
+
+First, tag the current state so the four-commit baseline the earlier
+chapters describe stays referenceable by name:
+
+```bash
+$ git tag -a baseline-4commits \
+    -m "Four-commit baseline for the Ch.5/6/16 demos (pre-environment)"
+$ git tag -n
+baseline-4commits Four-commit baseline for the Ch.5/6/16 demos (pre-environment)
+```
+
+Then commit the environment files. This is an ordinary commit; the only
+thing special about it is what it represents:
+
+```bash
+$ git add pyproject.toml uv.lock
+$ git commit -m "Pin the software environment with a uv lockfile"
+[main c1c408c] Pin the software environment with a uv lockfile
+ 2 files changed, 2392 insertions(+)
+ create mode 100644 pyproject.toml
+ create mode 100644 uv.lock
+```
+
+The lockfile is large (here, over 2000 lines) precisely because it
+pins the *entire* dependency tree, not just the packages you named.
+That is the point: it leaves nothing to chance. With it committed, the
+project's recipe is complete, and the headline result reproduces from
+a clean clone:
+
+```bash
+$ uv run python scripts/02_analysis.py
+             Estimate  Std. Error  t value  Pr(>|t|)    2.5%   97.5%
+Coefficient
+treat_post    -0.0189      0.0038  -4.9296       0.0 -0.0267 -0.0112
+```
+
+The estimate, a fall of 0.0189 in the teen employment rate, is the
+invariant this project is built to protect. It comes back because the
+seed fixed the data and the lockfile fixed the environment. Code, data
+recipe, and environment: with all three under control, "it works on my
+machine" becomes "it works on any machine."
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+Commit the lockfile (`uv.lock`), not just the loose requirements
+(`pyproject.toml`). The requirements say what you want ("polars 1.0 or
+newer"); the lockfile says what you actually ran ("polars 1.9.0 and
+these exact 59 transitive dependencies"). A reader can satisfy the
+first in a dozen incompatible ways. Only the second reproduces your
+result.
+:::
+
+## The same idea in R and conda {.tier-advanced}
+
+The lockfile pattern is not specific to `uv`; every serious ecosystem
+has its version. These are documented from their official guidance and
+not executed in this book's sandbox (R and conda are not installed
+here; verified 2026-06-21).
+
+In **R**, the `renv` package gives each project a private library and
+records exact versions in `renv.lock`. You run `renv::snapshot()` to
+write the lockfile and a collaborator runs `renv::restore()` to install
+precisely those versions; you commit `renv.lock` (with `.Rprofile` and
+`renv/activate.R`) to Git. It is the direct analogue of `uv.lock`.
+
+In the **conda** world there is a sharp and widely missed distinction.
+A hand-exported `environment.yml` is *not* a lockfile: `conda env
+export` does not guarantee a fully pinned dependency tree and is
+platform-specific. To get a true lock you use `conda-lock`, which
+solves the environment per platform and pins every package down to the
+build string (for example `pandas=2.2.2=py311ha02d727_0`).
+
+::: {.callout-warning .pitfall title="PITFALL"}
+Committing an `environment.yml` and believing you are done is one of
+the most common false comforts in computational research. It records
+your intentions, not your environment. If reproducibility matters, and
+for a submitted paper it now does (Chapter 1), commit a real lock:
+`uv.lock`, `renv.lock`, or a `conda-lock` file. The loose requirements
+file is a convenience for installation, not a guarantee of replication.
+:::
+
+## What you can now do
+
+You can state precisely why data and environments fall outside Git,
+and choose the right home for each: rebuild data from seeded code when
+you can, reach for LFS, DVC, or a DOI-minting repository when you
+cannot, and always commit a true lockfile so the environment travels
+with the code. Together with version-controlled code, that is a project
+that actually reproduces, not one that merely looks tidy. Chapter 15
+assembles all of it into a formal replication package and walks it
+through a journal's data editor.
+
+## Try it yourself {.unnumbered}
+
+Working in your clone of the running example:
+
+1. Delete the `data/` directory entirely, then run the three scripts in
+   order with `uv run`. Confirm the analysis file and the headline
+   estimate come back. Explain why deleting the data was safe.
+2. Run `git status` after the rebuild. Why is it clean? Name the file
+   that makes it clean and the rule inside it that ignores `data/`.
+3. Open `uv.lock` and count how many packages it pins versus how many
+   are named in `pyproject.toml`. Write one sentence on why the
+   difference matters for reproducibility.
+4. For a real project of your own, classify its data into the three
+   strategies from this chapter (rebuild from code, version with
+   LFS/DVC, deposit with a DOI). Which fits, and what would you have to
+   change to get there?

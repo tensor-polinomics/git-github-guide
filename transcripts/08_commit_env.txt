@@ -1,0 +1,6 @@
+$ git add pyproject.toml uv.lock
+$ git commit -m "Pin the software environment with a uv lockfile"
+[main c1c408c] Pin the software environment with a uv lockfile
+ 2 files changed, 2392 insertions(+)
+ create mode 100644 pyproject.toml
+ create mode 100644 uv.lock

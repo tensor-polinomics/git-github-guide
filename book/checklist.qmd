@@ -1,0 +1,6 @@
+# Reproducibility Checklist {.unnumbered}
+
+::: {.callout-note appearance="minimal"}
+**Status:** stub. One-page checklist a reader runs before circulating
+or submitting a replication package.
+:::

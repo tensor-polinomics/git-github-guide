@@ -1,0 +1,2 @@
+$ git status -s
+(clean: a known-good checkpoint before the agent touches anything)

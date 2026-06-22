@@ -1,0 +1,17 @@
+# analysis.csv got committed before we wrote .gitignore.
+$ git ls-files
+data/clean/analysis.csv
+run.py
+
+# Stop tracking it WITHOUT deleting your local copy:
+$ echo 'data/clean/' >> .gitignore
+$ git rm --cached data/clean/analysis.csv
+rm 'data/clean/analysis.csv'
+$ git commit -q -m "Stop tracking derived data"
+
+$ git ls-files
+run.py
+
+$ ls data/clean/
+analysis.csv
+(local file still there; just no longer tracked)

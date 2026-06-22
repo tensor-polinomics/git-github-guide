@@ -1,0 +1,7 @@
+$ git status -s
+M  README.md
+
+$ git restore --staged README.md
+$ git status -s
+ M README.md
+(still modified, just no longer staged)

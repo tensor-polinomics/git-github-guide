@@ -1,0 +1,10 @@
+$ uv run python scripts/00_make_data.py
+wrote data/raw/county_panel.csv  rows=960  counties=40  months=24
+$ uv run python scripts/01_clean.py
+wrote data/clean/analysis.parquet  rows=948  cols=7
+$ uv run python scripts/02_analysis.py
+             Estimate  Std. Error  t value  Pr(>|t|)    2.5%   97.5%
+Coefficient
+treat_post    -0.0189      0.0038  -4.9296       0.0 -0.0267 -0.0112
+
+wrote output/tables/did_main.txt and output/figures/event_means.png

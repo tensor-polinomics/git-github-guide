@@ -1,0 +1,7 @@
+$ git add scripts/01_clean.py
+$ git status -s
+M  scripts/01_clean.py
+
+$ git commit -m "Note small-sample filter as a TODO"
+[main e57cce6] Note small-sample filter as a TODO
+ 1 file changed, 2 insertions(+)

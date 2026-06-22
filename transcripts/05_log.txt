@@ -1,0 +1,6 @@
+$ git log --oneline
+e57cce6 Note small-sample filter as a TODO
+dcb18de Note headline result in README
+f9a193f Add DiD analysis, report, and main table
+758175e Add polars cleaning script
+20c7835 Set up project skeleton and data generator

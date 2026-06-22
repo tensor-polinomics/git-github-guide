@@ -1,0 +1,74 @@
+# Preface {.unnumbered}
+
+This book teaches Git and GitHub to students and researchers in
+economics, finance, accounting, and the social sciences. The
+organizing principle is reproducibility: the ability for someone
+else (including future you) to rerun your work and get the same
+numbers. Git is the single most useful tool for getting there, and
+it is increasingly a hard requirement. Journal data editors now
+check that your replication package actually runs.
+
+This is not a generic Git tutorial. Every example is built around
+one small empirical project, a difference-in-differences study of a
+minimum-wage change, and every command is run for real so the
+output you see is the output the commands actually produced.
+
+## Who this is for
+
+Readers range from a first-year undergraduate who has never opened a
+terminal to a PhD student assembling a replication package. No
+computer-science background is assumed.
+
+## How sections are tiered
+
+Technical sections are tagged so you can read at your level:
+
+::: {.tier-beginner}
+### Read this if you are new
+
+BEGINNER material is fully explained and copy-pasteable. If you type
+exactly what you see, it will work.
+:::
+
+::: {.tier-advanced}
+### Read this once the basics click
+
+ADVANCED material assumes you are comfortable with the daily loop
+and want the powerful, sharper tools.
+:::
+
+## The three callouts
+
+Three callout boxes recur throughout the book.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+What commonly breaks, and the mistake that causes it.
+:::
+
+::: {.callout-tip .recovery title="RECOVERY"}
+The exact commands to get out of trouble.
+:::
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+Why this step matters for someone else being able to rerun your work.
+:::
+
+## What Git does and does not do
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+Git versions text: code, scripts, notes, small tables. Git does
+**not** reproduce your data or your software environment. A repo
+that contains only code is not a reproducible project. Chapters 6
+and 8 are about closing that gap, and they matter as much as the
+Git mechanics.
+:::
+
+## Conventions
+
+Commands appear in blocks with their real output, followed by one
+sentence on what changed and why. Terminal blocks are wrapped to
+about 64 characters so they read cleanly in print and on the web.
+We use modern Git throughout: the default branch is `main`, we use
+`git switch` and `git restore` rather than `git checkout` for
+everyday work, and we use `git filter-repo` (never BFG or
+`filter-branch`) when history must be rewritten.

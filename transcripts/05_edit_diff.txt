@@ -1,0 +1,14 @@
+$ git status -s
+ M scripts/01_clean.py
+
+$ git diff
+diff --git a/scripts/01_clean.py b/scripts/01_clean.py
+index 1433ced..1455584 100644
+--- a/scripts/01_clean.py
++++ b/scripts/01_clean.py
+@@ -53,3 +53,5 @@ def main() -> None:
+
+ if __name__ == "__main__":
+     main()
++
++# TODO: drop counties with <100 teens (small-sample noise)

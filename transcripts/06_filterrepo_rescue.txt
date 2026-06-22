@@ -1,0 +1,11 @@
+# Step 0 (NOT shown by git): rotate the leaked key at the
+# vendor and change the DB password. Do this FIRST.
+
+# Step 1: purge the file from all of history.
+$ git filter-repo --invert-paths \
+      --path config/secrets.yaml --force
+Parsed 3 commits
+HEAD is now at 871835e Add main() to pull script
+New history written in 0.03 seconds; now repacking/cleaning...
+Repacking your repo and cleaning out old unneeded objects
+Completely finished after 0.11 seconds.

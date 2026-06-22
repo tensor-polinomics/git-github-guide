@@ -1,0 +1,6 @@
+$ md5sum data/raw/county_panel.csv
+1b85815d831a97e7f04597a88e89cc50  data/raw/county_panel.csv
+$ uv run python scripts/00_make_data.py   # regenerate
+wrote data/raw/county_panel.csv  rows=960  counties=40  months=24
+$ md5sum data/raw/county_panel.csv        # same hash
+1b85815d831a97e7f04597a88e89cc50  data/raw/county_panel.csv

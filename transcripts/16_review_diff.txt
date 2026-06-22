@@ -1,0 +1,23 @@
+$ git status -s
+ M scripts/02_analysis.py
+
+# Review EVERY line the agent changed before trusting it:
+$ git diff
+diff --git a/scripts/02_analysis.py b/scripts/02_analysis.py
+index 0f17840..a84fb36 100644
+--- a/scripts/02_analysis.py
++++ b/scripts/02_analysis.py
+@@ -21,6 +21,7 @@ matplotlib.use("Agg")
+ import matplotlib.pyplot as plt
+ import pyfixest as pf
+ import polars as pl
++# Use clustered SEs by county (agent suggestion)
+
+ CLEAN = Path("data/clean/analysis.parquet")
+ TAB = Path("output/tables")
+@@ -67,3 +68,5 @@ def main() -> None:
+
+ if __name__ == "__main__":
+     main()
++
++OUTDIR = "/Users/agent/scratch/out"  # agent hard-coded path

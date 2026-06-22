@@ -1,0 +1,310 @@
+# Git for Beginners: The Daily Loop
+
+This chapter teaches the small set of commands you will use every
+working day: see what changed, stage it, commit it, and look back at
+your history. It also teaches the two skills that turn Git from
+scary to safe: telling Git what to ignore, and undoing mistakes
+without losing work.
+
+Everything here is run for real inside the book's running example,
+the minimum-wage difference-in-differences project in `sandbox/`. The
+terminal blocks show the actual output those commands produced. Your
+commit hashes will differ (they are content-based and unique to your
+machine); nothing else should.
+
+::: {.callout-note appearance="minimal"}
+This chapter stays entirely local. There is no GitHub yet, no remote,
+no internet. You can do everything here on a laptop on a plane.
+Pushing to GitHub is Chapter 9.
+:::
+
+## The mental model in one paragraph
+
+Git tracks your project as a series of snapshots called **commits**.
+A commit is a labelled save point for the whole project, not just one
+file. Between commits, a changed file lives in one of three places:
+the **working tree** (your actual files on disk), the **staging
+area** or index (a holding pen for the next commit), and the
+**repository** (the permanent history of commits). The daily loop is
+just moving changes from the working tree, into the staging area,
+into a commit. Chapter 3 draws this in full; you do not need the
+diagram to start.
+
+## The daily loop {.tier-beginner}
+
+### Step 1: see where you are
+
+Start every session by asking Git what it sees. `git status` is the
+command you will run more than any other.
+
+```bash
+$ git status
+On branch main
+nothing to commit, working tree clean
+```
+
+A clean working tree means every change is already committed. This is
+the state you want to return to before you stop for the day.
+
+Now suppose you edit a script. Here we add a one-line `TODO` to the
+cleaning script, reminding ourselves to drop tiny counties later.
+`git status -s` gives the short view, and `git diff` shows exactly
+what changed.
+
+```bash
+$ git status -s
+ M scripts/01_clean.py
+
+$ git diff
+diff --git a/scripts/01_clean.py b/scripts/01_clean.py
+index 1433ced..1455584 100644
+--- a/scripts/01_clean.py
++++ b/scripts/01_clean.py
+@@ -53,3 +53,5 @@ def main() -> None:
+
+ if __name__ == "__main__":
+     main()
++
++# TODO: drop counties with <100 teens
+```
+
+The `M` means modified. Lines starting with `+` are additions. You
+have changed one file, and Git has noticed, but nothing is saved yet.
+
+### Step 2: stage what you want to keep
+
+Staging is how you choose what goes into the next commit. You can
+stage one file at a time, which is the habit worth building.
+
+```bash
+$ git add scripts/01_clean.py
+$ git status -s
+M  scripts/01_clean.py
+```
+
+Look closely: the `M` moved from the right column to the left. In the
+short status, the **left column is the staging area** and the right
+column is the working tree. The change is now staged and ready.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+Beginners reflexively type `git add .` to stage everything. In a
+research project that is how data files, output figures, and stray
+`.env` secrets sneak into history. Stage files by name, or review
+first with `git status` and `git diff --staged`. GitHub's own
+guidance on avoiding leaks says the same thing: prefer `git add
+filename` over the catch-all `git add .`.
+:::
+
+### Step 3: commit, with a message that will mean something later
+
+A commit needs a message. Write it for the person who will read the
+log in six months, which is usually you.
+
+```bash
+$ git commit -m "Note small-sample filter as a TODO"
+[main e57cce6] Note small-sample filter as a TODO
+ 1 file changed, 2 insertions(+)
+```
+
+Git reports the branch (`main`), the new commit's short hash
+(`e57cce6`), and a one-line summary of what changed. The snapshot is
+now permanent history.
+
+### Step 4: look back
+
+`git log --oneline` is the compact history. The most recent commit is
+on top.
+
+```bash
+$ git log --oneline
+e57cce6 Note small-sample filter as a TODO
+dcb18de Note headline result in README
+f9a193f Add DiD analysis, report, and main table
+758175e Add polars cleaning script
+20c7835 Set up project skeleton and data generator
+```
+
+That is the whole loop: `status`, `diff`, `add`, `commit`, `log`.
+Four of those five commands only look; only `commit` writes history.
+
+::: {.callout-tip .recovery title="RECOVERY"}
+Wrote a bad commit message? If you have not done anything since,
+`git commit --amend -m "Better message"` rewrites just the last
+commit. Do this only for commits you have not yet shared with anyone
+(more on why in Chapter 7).
+:::
+
+## What to commit, and what to ignore {.tier-beginner}
+
+A research repo contains things that must never be committed: raw
+data, derived data, large outputs, and secrets. You tell Git to
+ignore them with a `.gitignore` file. The running example ships with
+one that ignores the data and output directories and any `.env` file.
+
+Watch what happens when those files exist on disk. We create a fake
+raw-data file and a `.env` holding a pretend API key.
+
+```bash
+$ ls data/raw/ .env
+.env
+
+data/raw/:
+county_panel.csv
+
+$ git status -s
+```
+
+`git status` shows nothing. Both paths match `.gitignore`, so Git
+pretends they are not there and will never stage them. To confirm an
+ignore rule is actually firing, ask for the ignored entries
+explicitly:
+
+```bash
+$ git status --ignored -s
+!! .env
+!! data/
+```
+
+The `!!` marks ignored paths. This is the single most important habit
+in research Git: your code is versioned, your data and secrets are
+not. Chapters 6 and 8 go deep on why and on what to do with the data
+instead.
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+Ignoring data is not the same as losing it. The running example
+rebuilds `data/raw/` from a seeded script (`00_make_data.py`), so a
+collaborator who clones the code-only repo can regenerate the exact
+same inputs. Code in Git plus a script that produces the data is
+reproducible. Code plus a 2 GB CSV nobody can rebuild is not.
+:::
+
+## Undoing mistakes safely {.tier-beginner}
+
+Most "I broke Git" panics are one of three situations. Each has a
+safe, specific fix. None of them require deleting your repo and
+re-cloning.
+
+### Discard an edit you have not staged
+
+You changed a file, you regret it, you have not staged or committed.
+`git restore` puts the file back to its last committed state.
+
+```bash
+$ git status -s
+ M README.md
+
+$ git restore README.md
+$ git status -s
+```
+
+Clean again. The experimental edit is gone.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+`git restore <file>` permanently throws away uncommitted changes to
+that file. That is the point, but there is no undo for work that was
+never committed. When in doubt, commit first (you can always undo a
+commit), then experiment.
+:::
+
+### Unstage something you staged too early
+
+You ran `git add`, then realised the change is not ready. You want to
+keep the edit but take it out of the next commit. Add `--staged`.
+
+```bash
+$ git restore --staged README.md
+$ git status -s
+ M README.md
+```
+
+The file is still modified (right column), just no longer staged.
+Nothing was lost; you only changed your mind about the next commit.
+
+### Undo a change you already committed
+
+This is the important one for shared work. You committed something
+and want to reverse it. Do **not** rewrite history if anyone might
+have your commits. Instead, `git revert` creates a *new* commit that
+undoes the old one, leaving the record intact.
+
+```bash
+$ git revert --no-edit HEAD
+[main 7b13816] Revert "Note small-sample filter as a TODO"
+ Date: Sun Jun 21 21:48:27 2026 +0000
+ 1 file changed, 2 deletions(-)
+
+$ git log --oneline -3
+7b13816 Revert "Note small-sample filter as a TODO"
+e57cce6 Note small-sample filter as a TODO
+dcb18de Note headline result in README
+```
+
+Both commits are in the history: the original and its reversal. That
+is honest and safe. Anyone who already had `e57cce6` just receives
+the revert on top, with no conflict.
+
+## The safety net you did not know you had {.tier-advanced}
+
+Even genuinely destructive commands are usually recoverable, because
+Git keeps a private log of everywhere `HEAD` has been: the
+**reflog**. Suppose you wipe out two commits with a careless hard
+reset.
+
+```bash
+$ git reset --hard HEAD~2
+HEAD is now at dcb18de Note headline result in README
+```
+
+Those two commits look gone from `git log`. They are not gone. The
+reflog still points at them.
+
+```bash
+$ git reflog -3
+dcb18de HEAD@{0}: reset: moving to HEAD~2
+7b13816 HEAD@{1}: revert: Revert "Note small-sample filter as a TODO"
+e57cce6 HEAD@{2}: commit: Note small-sample filter as a TODO
+```
+
+`HEAD@{1}` is where you were before the reset. Point `HEAD` back at
+it and the work returns.
+
+```bash
+$ git reset --hard 7b13816
+HEAD is now at 7b13816 Revert "Note small-sample filter as a TODO"
+```
+
+::: {.callout-tip .recovery title="RECOVERY"}
+If you ever think you have lost commits, run `git reflog` before
+doing anything else, find the hash of the state you want, and
+`git reset --hard <hash>` (or, more safely, `git switch -c rescue
+<hash>` to inspect it on a new branch first). Reachable reflog
+entries are kept for 90 days by default, and unreachable ones for 30,
+so you have weeks, not seconds, to recover. The reflog is local only;
+it is not a substitute for committing and, later, pushing.
+:::
+
+## What you can now do
+
+You can run the full daily loop, keep data and secrets out of the
+repository, and undo every common mistake without panic. That is
+genuinely most of day-to-day Git. Branching, merging, and the sharper
+power tools are Chapter 7; putting any of this online is Chapter 9.
+
+## Try it yourself {.unnumbered}
+
+Working in your clone of the running example:
+
+1. Open `report.qmd` and add a sentence to the discussion. Run
+   `git status` and `git diff` to confirm Git sees exactly your
+   change and nothing else.
+2. Stage and commit it with a message a stranger could understand.
+   Run `git log --oneline` and find your commit on top.
+3. Make a second edit, stage it, then change your mind and
+   `git restore --staged` it. Confirm with `git status -s` that the
+   edit survives but is unstaged.
+4. Create a file `data/raw/scratch.csv`. Run `git status`. Explain in
+   one sentence why it does not appear, then prove it with
+   `git status --ignored`.
+5. Commit anything, then `git revert --no-edit HEAD`. Read the log
+   and describe, in your own words, the difference between reverting a
+   commit and deleting it.

@@ -1,0 +1,6 @@
+$ git status -s
+ M README.md
+
+$ git restore README.md
+$ git status -s
+(working tree clean again; edit discarded)

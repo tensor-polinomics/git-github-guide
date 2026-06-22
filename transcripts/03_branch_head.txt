@@ -1,0 +1,5 @@
+$ git branch
+* main
+
+$ cat .git/HEAD
+ref: refs/heads/main

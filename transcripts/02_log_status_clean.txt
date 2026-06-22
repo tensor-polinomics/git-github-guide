@@ -1,0 +1,8 @@
+$ git log --oneline
+f9a193f Add DiD analysis, report, and main table
+758175e Add polars cleaning script
+20c7835 Set up project skeleton and data generator
+
+$ git status
+On branch main
+nothing to commit, working tree clean

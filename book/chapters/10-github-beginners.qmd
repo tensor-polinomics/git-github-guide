@@ -1,0 +1,17 @@
+# GitHub for Beginners
+
+::: {.callout-note appearance="minimal"}
+**Chapter status:** stub. Scope: Repos, README, LICENSE, issues, the web UI.
+:::
+
+<!-- DRAFTING NOTES (remove on final)
+Running example: minimum-wage DiD project in ../sandbox.
+Tier each technical section with ::: {.tier-beginner} / {.tier-advanced}.
+Use PITFALL / RECOVERY / REPRODUCIBILITY callouts.
+Every command block: command + REAL output + one sentence why.
+Wrap code/terminal to ~64 chars. No em-dashes.
+-->
+
+## Try it yourself {.unnumbered}
+
+_Exercise tied to the running example will go here._

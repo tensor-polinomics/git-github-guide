@@ -1,0 +1,13 @@
+[main (root-commit) 20c7835] Set up project skeleton and data generator
+ 3 files changed, 132 insertions(+)
+ create mode 100644 .gitignore
+ create mode 100644 README.md
+ create mode 100644 scripts/00_make_data.py
+[main 758175e] Add polars cleaning script
+ 1 file changed, 55 insertions(+)
+ create mode 100644 scripts/01_clean.py
+[main f9a193f] Add DiD analysis, report, and main table
+ 3 files changed, 108 insertions(+)
+ create mode 100644 output/tables/did_main.txt
+ create mode 100644 report.qmd
+ create mode 100644 scripts/02_analysis.py

@@ -1,0 +1,198 @@
+# The Mental Model of Git
+
+Most people who find Git confusing are missing one picture, not a
+hundred commands. Once you can see what Git is actually doing, the
+commands stop being magic incantations and become obvious moves on a
+board you understand. This chapter draws that board. There are only
+three ideas on it: a commit is a snapshot of your whole project, your
+work lives in three places at once, and a branch is just a movable
+label. Everything in the rest of the book is built on these three.
+
+We will keep remotes (GitHub, the shared copy) out of the picture
+until Chapter 9. You can do real, version-controlled research for
+months without ever touching a remote, and mixing it in now is exactly
+what makes Git feel overwhelming. Learn the local model first.
+
+![The mental model of Git: a change moves across the three trees by `git add` and `git commit` (and back with `git restore`), and the repository stores a chain of commits, each a whole-project snapshot, with `main` as a movable pointer and `HEAD` pointing at it. The remote is deferred to Chapter 9.](../assets/diagrams/fig-git-mental-model){#fig-git-mental-model fig-alt="A two-band diagram. The top band, labelled the three trees and the daily loop, shows four cards left to right: Working tree (files on disk), Staging area (the index), Repository (committed history), and a dashed Remote (a shared copy on GitHub). Solid arrows labelled git add and git commit run left to right; a dashed amber arrow labelled git restore curves back from the repository to the working tree; a dashed arrow labelled push slash fetch links the repository to the remote. The bottom band, labelled what the repository stores, shows four commits in a chain (20c7835, 758175e, f9a193f, dcb18de) joined by arrows, with pointers HEAD and main both aimed at the newest commit." width="6in"}
+
+Refer back to @fig-git-mental-model as you read; each section below is
+one part of it.
+
+## A commit is a snapshot of the whole project
+
+The single most useful correction to most beginners' intuition: a
+commit is not a record of what changed in one file. A commit is a
+complete snapshot of every tracked file in your project at one moment,
+plus a label saying who took it, when, and why. Git is not storing a
+stack of diffs; it is storing a sequence of photographs of the entire
+working directory.
+
+You can see this directly. Git stores each commit as a small object,
+and `git cat-file -p` prints it in plain text. Here is the newest
+commit in the running example:
+
+```bash
+$ git cat-file -p HEAD
+tree 5c2b271dba406fa5181d962342644d8a7799d0b2
+parent f9a193f0ac3e4535babbb484bf65feecba5d2582
+author Pat Researcher <pat@example.edu> 1780570800 +0000
+committer Pat Researcher <pat@example.edu> 1780570800 +0000
+
+Note headline result in README
+```
+
+A commit points at exactly two interesting things. The `parent` is the
+commit that came before it, which is how history chains together. The
+`tree` is the snapshot itself: a listing of the whole project at that
+moment. Follow the tree and you get the project, top level first:
+
+```bash
+$ git cat-file -p HEAD^{tree}
+100644 blob b22a497d8a12ece1c64d20db595f9a0c98e7c057	.gitignore
+100644 blob cc7f10a5617b488417a5230dcf02829134d4e1a4	README.md
+040000 tree c95f734379adfe83a1e45ac4ada5468fc1700f0d	output
+100644 blob b7c5ea44aca071822375d6a62410950f654a129c	report.qmd
+040000 tree 7790e6d9f8d467334be13c42605f44b8cdc49147	scripts
+```
+
+Every file is a `blob` (its contents) and every subfolder is another
+`tree`. The commit captures all of it. This is why checking out an old
+commit restores the entire project to how it was, not just one file,
+and why Git can never "lose half your work" inside a commit: a commit
+is all-or-nothing by construction.
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+Snapshots are what make Git an honest scientific record. A committed
+result is tied to the exact state of every script that produced it. If
+your `git log` says the main table came from commit `f9a193f`, you can
+return the entire project to `f9a193f` and rerun it. That is the
+difference between "the figure in the paper" and "a figure I can
+regenerate from a known, labelled state of the code."
+:::
+
+Two more facts about commits, both visible above. The long string after
+`HEAD` is the commit's **hash**, a fingerprint computed from its
+contents; change anything and the hash changes, which is why hashes
+differ across machines and why they cannot be quietly forged. And every
+commit names its parent, so the history is a chain: each snapshot knows
+the one before it.
+
+## Your work lives in three trees
+
+At any moment, a tracked file in your project exists in up to three
+versions at once. Git calls these the three trees, and they are the
+left half of @fig-git-mental-model.
+
+The **working tree** is the set of real files on your disk: what your
+editor opens, what your scripts read. This is the only one of the three
+you edit directly.
+
+The **staging area**, also called the index, is a holding pen for the
+next commit. Nothing you change reaches history until you place it here
+with `git add`. The staging area is the feature beginners most often
+overlook and advanced users most rely on: it lets you commit a clean,
+deliberate subset of your changes instead of whatever happens to be on
+disk.
+
+The **repository** is the permanent history of commits, the snapshots
+described above. `git commit` takes whatever is in the staging area and
+writes it as a new snapshot here.
+
+So the daily loop from Chapter 5 is just moving a change rightward
+across @fig-git-mental-model: edit in the working tree, `git add` it
+into the staging area, `git commit` it into the repository. And the
+undo commands move leftward: `git restore` discards a working-tree
+edit, `git restore --staged` pulls a change back out of the staging
+area. The same three trees explain both the saving and the undoing.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+Because a commit snapshots the staging area, not your disk, it is
+possible to commit something different from what you see in your
+editor. If you edit a file after `git add` and then commit without
+adding again, the commit captures the earlier, staged version. This is
+not a bug; it is the staging area doing its job. The habit that keeps
+you safe is the one from Chapter 5: run `git status` and `git diff
+--staged` before you commit, so you commit what you mean to.
+:::
+
+## A branch is a movable pointer
+
+The word "branch" makes people imagine something heavy, like a separate
+copy of the project. It is the opposite. A branch is a tiny, movable
+label that points at one commit. That is all.
+
+The running example has one branch, `main`:
+
+```bash
+$ git branch
+* main
+```
+
+And `HEAD` is simply the pointer that tracks where you are now. In the
+normal case it does not point straight at a commit; it points at a
+branch, which in turn points at a commit:
+
+```bash
+$ cat .git/HEAD
+ref: refs/heads/main
+```
+
+So the chain is `HEAD` to `main` to the newest commit, exactly as drawn
+on the right of @fig-git-mental-model. When you make a new commit, Git
+writes the snapshot, then slides the `main` pointer forward to it, and
+`HEAD` comes along because it was pointing at `main`. The history
+itself does not move; the label does. Seen as a chain of commits, the
+example is perfectly linear:
+
+```bash
+$ git log --graph --oneline
+* dcb18de Note headline result in README
+* f9a193f Add DiD analysis, report, and main table
+* 758175e Add polars cleaning script
+* 20c7835 Set up project skeleton and data generator
+```
+
+Because a branch is only a pointer, creating one is instant and free:
+you are not copying files, you are writing down one more label. That is
+the whole reason branching in Git is cheap enough to do constantly,
+which Chapter 7 builds on. For now the point is conceptual: "switch
+branches" means "move the `HEAD` label and update the working tree to
+match," not "open a different folder."
+
+## Local now, remote later
+
+Everything above happens entirely on your own machine. The repository,
+the staging area, the branches, the whole history: all local, all
+usable on a laptop with no internet. A **remote** is just a second copy
+of the repository living somewhere else, usually on GitHub, that you
+synchronise with using `git push` and `git fetch`. It is drawn faded
+and dashed on the right of @fig-git-mental-model precisely because it is
+not part of the core local model and not part of this chapter. When you
+are ready to share, collaborate, or back up your work, Chapter 9
+introduces remotes properly. Until then, the three trees and the branch
+pointers are the complete picture.
+
+## What you can now do
+
+You can read a commit as a snapshot of the whole project, name the
+three trees and say which command moves a change between them, and
+explain `main` and `HEAD` as movable pointers rather than copies. This
+is the model the rest of the book assumes. When a later command seems
+confusing, come back to @fig-git-mental-model and ask the only three
+questions that matter: which tree is this change in, which commit does
+the snapshot capture, and where is the branch pointer now.
+
+## Try it yourself {.unnumbered}
+
+Working in your clone of the running example:
+
+1. Run `git cat-file -p HEAD`. Identify the `tree` line and the
+   `parent` line, and say in one sentence what each one points to.
+2. Run `git cat-file -p HEAD^{tree}`. Confirm that the entries match
+   the files and folders at the top level of the project. Why is this
+   the right notion of a "snapshot" for reproducibility?
+3. Run `cat .git/HEAD`, then `git branch`. Trace the pointer chain from
+   `HEAD` to a specific commit hash, naming each hop.
+4. Make and commit one trivial change, then run `git log --oneline`
+   before and after. Which pointer moved, and which commits kept their
+   hashes? Tie your answer back to @fig-git-mental-model.

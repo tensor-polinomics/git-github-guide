@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use this book or its example, please cite it as below."
+title: "Git and GitHub for Social Science Researchers"
+abstract: >-
+  A reproducibility-first guide to Git and GitHub for economics,
+  finance, accounting, and the social sciences, with a runnable
+  minimum-wage difference-in-differences example that rebuilds from a
+  seeded script under a locked environment.
+type: book
+authors:
+  - name: "tensor.polinomics"
+url: "https://github.com/tensor-polinomics/git-github-guide"
+repository-code: "https://github.com/tensor-polinomics/git-github-guide"
+license: CC-BY-4.0
+version: "0.1.0"
+date-released: "2026-06-21"
+keywords:
+  - git
+  - github
+  - reproducibility
+  - replication
+  - version control
+  - economics
+  - social science

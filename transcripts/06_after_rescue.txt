@@ -1,0 +1,10 @@
+$ git log --oneline
+871835e Add main() to pull script
+3a16703 Start data-pull script
+
+# The file no longer exists at any commit:
+$ git log --oneline -- config/secrets.yaml
+(no output: the path is gone from history)
+
+$ git show HEAD~1:config/secrets.yaml
+fatal: path 'config/secrets.yaml' does not exist in 'HEAD~1'

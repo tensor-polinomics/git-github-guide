@@ -1,0 +1,9 @@
+$ git revert --no-edit HEAD
+[main 7b13816] Revert "Note small-sample filter as a TODO"
+ Date: Sun Jun 21 21:48:27 2026 +0000
+ 1 file changed, 2 deletions(-)
+
+$ git log --oneline -3
+7b13816 Revert "Note small-sample filter as a TODO"
+e57cce6 Note small-sample filter as a TODO
+dcb18de Note headline result in README

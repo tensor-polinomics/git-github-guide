@@ -1,0 +1,84 @@
+% ======================================================================
+% fig-git-mental-model.tex
+% Hero figure for Ch.3 "The Mental Model of Git".
+% Concept: the daily loop moves a change across the THREE TREES
+% (working tree -> staging area -> repository) via git add / git commit,
+% and git restore moves it back. The repository stores HISTORY: a chain
+% of commits, each a whole-project snapshot, with a branch (main) as a
+% movable pointer and HEAD pointing at the branch. The remote (GitHub)
+% is a second copy, deferred to Chapter 9.
+% ======================================================================
+\documentclass[tikz,border=10pt]{standalone}
+\input{../preamble.tex}
+
+\begin{document}
+\begin{tikzpicture}[
+  tree/.style = {tbcard={#1}{center}, text width=30mm,
+    minimum width=36mm, minimum height=20mm, inner sep=5pt,
+    font=\sffamily\fontsize{8}{10}\selectfont,
+    execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}},
+  cmt/.style = {tbcard={tbData}{center}, minimum width=24mm,
+    minimum height=11mm, inner sep=3pt,
+    font=\ttfamily\fontsize{8}{10}\selectfont},
+  elabel/.style = {fill=white, inner sep=1.6pt, text=tbNeutText,
+    font=\ttfamily\fontsize{7.5}{9}\selectfont},
+]
+
+% ============================ BAND A: the three trees =================
+\node[tree={tbNeut}] (wt) at (22mm, 0)
+  {\tbhead{pen-line}{Working tree}\\[2pt]
+   \tbdetail{the files on your disk, where you edit}};
+\node[tree={tbPrim}] (st) at (80mm, 0)
+  {\tbhead{layers}{Staging area}\\[2pt]
+   \tbdetail{the index: what goes in the next commit}};
+\node[tree={tbData}, tbstrong] (repo) at (138mm, 0)
+  {\tbhead{database}{Repository}\\[2pt]
+   \tbdetail{committed history, the permanent record}};
+\node[tree={tbNeut}, draw=tbNeutLine, dashed] (rm) at (196mm, 0)
+  {\tbhead{git-commit-horizontal}{Remote}\\[2pt]
+   \tbdetail{a shared copy on GitHub}};
+
+\draw[tbedge thick] (wt) -- node[elabel]{git add} (st);
+\draw[tbedge thick] (st) -- node[elabel]{git commit} (repo);
+\draw[tbdash] (repo) -- node[elabel]{push / fetch} (rm);
+
+\draw[tbback] (repo.south) to[bend left=18]
+  node[pos=0.5, fill=white, inner sep=1.6pt, text=tbStopText,
+    font=\ttfamily\fontsize{7.5}{9}\selectfont]
+    {git restore}
+  (wt.south);
+
+% ============================ BAND B: history =========================
+\node[cmt] (c1) at (40mm, -60mm)  {20c7835};
+\node[cmt] (c2) at (85mm, -60mm)  {758175e};
+\node[cmt] (c3) at (130mm, -60mm) {f9a193f};
+\node[cmt] (c4) at (175mm, -60mm) {dcb18de};
+\foreach \a/\b in {c1/c2,c2/c3,c3/c4}
+  \draw[tbedge thick, draw=tbDataLine] (\a) -- (\b);
+
+\node[tbpill=tbPrim, anchor=south] (mainp) at ([yshift=7mm]c4.north)
+  {\sffamily\bfseries main};
+\node[tbpill=tbPrim, anchor=south] (headp) at ([yshift=6mm]mainp.north)
+  {\sffamily\bfseries HEAD};
+\draw[tbedge, draw=tbPrimLine] (headp) -- (mainp);
+\draw[tbedge, draw=tbPrimLine] (mainp) -- (c4.north);
+
+\node[tbnote, anchor=east, text width=20mm] at ([xshift=-4mm]c1.west)
+  {first\\ commit};
+\node[align=center, font=\sffamily\fontsize{7}{8.5}\selectfont,
+  text=tbMute, inner sep=2pt] at (107mm, -72mm)
+  {each commit is a snapshot of the whole project (a tree of files),
+   not a single-file diff $\cdot$ a branch is just a movable pointer to one commit};
+
+\draw[tbdash, draw=tbDataLine] (repo.east) to[out=0,in=90] (c4.north);
+
+% ============================ bands / section labels ==================
+\begin{scope}[on background layer]
+  \node[tbband accent={tbPrim}, fit=(wt)(repo)(rm)] (bandA) {};
+  \node[tbband accent={tbData}, fit=(c1)(c4)(headp), inner sep=7mm] (bandB) {};
+\end{scope}
+\tbsectionlabel{bandA}{The three trees  $\cdot$  the daily loop}
+\tbsectionlabel{bandB}{What the repository stores  $\cdot$  commits and branches}
+
+\end{tikzpicture}
+\end{document}

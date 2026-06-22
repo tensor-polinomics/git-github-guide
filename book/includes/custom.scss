@@ -1,0 +1,55 @@
+/*-- scss:defaults --*/
+// Brand-ish accent for a calm, academic look.
+$primary: #2c5f8a;
+
+/*-- scss:rules --*/
+
+/* ------------------------------------------------------------------
+   Tier badges. Use at the top of a tiered section:
+   ::: {.tier-beginner}
+   ## The daily loop
+   :::
+   ...content...
+   ------------------------------------------------------------------ */
+.tier-beginner > :first-child::before,
+.tier-advanced > :first-child::before {
+  display: inline-block;
+  font-size: 0.70rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.10rem 0.5rem;
+  border-radius: 0.35rem;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+.tier-beginner > :first-child::before {
+  content: "BEGINNER";
+  background: #e6f4ea;
+  color: #1e7e34;
+  border: 1px solid #bcdfc7;
+}
+.tier-advanced > :first-child::before {
+  content: "ADVANCED";
+  background: #fdecea;
+  color: #b23b2e;
+  border: 1px solid #f4c7c0;
+}
+
+/* ------------------------------------------------------------------
+   Custom callouts. Quarto ships note/tip/warning/important/caution.
+   We standardise three research callouts by reusing those types with
+   fixed titles. Convention (documented in index.qmd):
+     PITFALL          -> callout-warning  (what breaks)
+     RECOVERY         -> callout-tip      (how to fix it)
+     REPRODUCIBILITY  -> callout-important(why it matters)
+   The rules below tint them so they read as a distinct family.
+   ------------------------------------------------------------------ */
+div.callout-warning.pitfall .callout-title { background: #fff3cd; }
+div.callout-tip.recovery .callout-title { background: #e6f4ea; }
+div.callout-important.reproducibility .callout-title { background: #e7f0fa; }
+
+/* Keep terminal blocks visually distinct and wrapped. */
+pre.sourceCode, pre > code {
+  white-space: pre-wrap;
+  word-break: break-word;
+}

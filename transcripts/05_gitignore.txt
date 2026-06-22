@@ -1,0 +1,12 @@
+$ ls data/raw/ .env
+.env
+
+data/raw/:
+county_panel.csv
+
+$ git status -s
+(nothing: both paths match .gitignore)
+
+$ git status --ignored -s
+!! .env
+!! data/

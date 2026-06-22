@@ -1,0 +1,1 @@
+$ git bundle create minwage-did.bundle HEAD main --tags

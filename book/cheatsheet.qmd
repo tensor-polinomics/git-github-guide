@@ -1,0 +1,6 @@
+# Command Cheat Sheet {.unnumbered}
+
+::: {.callout-note appearance="minimal"}
+**Status:** stub. One-page printable reference of the commands used
+in this book, grouped by daily loop, branching, remotes, recovery.
+:::

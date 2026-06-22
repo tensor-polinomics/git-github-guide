@@ -1,0 +1,11 @@
+$ git diff --staged
+diff --git a/README.md b/README.md
+index cc7f10a..c6d789f 100644
+--- a/README.md
++++ b/README.md
+@@ -36,3 +36,5 @@ Python 3.10+, with `polars`, `pyfixest`, `pandas`,
+ ## Headline result
+
+ Treated counties saw a fall of about 1.9 pp.
++
++# keep this note

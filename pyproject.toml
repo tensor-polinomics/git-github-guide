@@ -1,0 +1,29 @@
+# Build/validation tooling for the book
+# "Git & GitHub for Social Science Researchers".
+#
+# This pins the ONLY Python dependency of tools/validate_book.py
+# (PyYAML). Reproduce the gate with:
+#
+#     uv run python tools/validate_book.py book
+#
+# uv builds the locked environment from uv.lock on first run.
+#
+# EXTERNAL (non-Python) dependency: pandoc must be on PATH for the
+# markdown-lint pass. Without it the validator still runs but downgrades
+# that pass to a WARN. Install pandoc via your OS package manager
+# (e.g. `brew install pandoc`); it is not a pip/uv package.
+#
+# The running example has its OWN environment; see
+# sandbox/minwage-did/pyproject.toml.
+
+[project]
+name = "git-github-guide-tools"
+version = "0.1.0"
+description = "Validation/build tooling for the Git & GitHub guide book."
+requires-python = ">=3.10"
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[tool.uv]
+package = false

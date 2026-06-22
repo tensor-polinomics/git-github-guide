@@ -1,0 +1,231 @@
+# Reproducibility and the Replication Crisis
+
+A result you cannot reproduce is not yet a result. It is a claim. For
+most of the history of empirical economics, the distinction did not
+bite, because nobody could check: the data sat on the author's hard
+drive, the code lived in a folder named `final_v3_REALfinal`, and the
+published tables were the only thing the rest of us ever saw. That
+era is over. Journals now run your code before they accept your paper,
+funders require your data to be archived, and a coauthor, a referee,
+or a stranger on the internet can ask to rebuild your headline number
+from scratch. This chapter is about why that happened, and why version
+control, the subject of the rest of this book, became a basic
+research skill rather than a programmer's hobby.
+
+The audience here is economics, finance, and accounting first, and the
+wider social sciences alongside. The evidence leads with economics
+because that is where this book lives, but the problem is not an
+economics problem. It is a science problem, and seeing its full width
+is part of taking it seriously.
+
+## Two words people use interchangeably and should not
+
+It helps to separate two things that casual usage blurs together.
+
+**Reproducibility** is the narrow, mechanical question: given *your*
+data and *your* code, can someone else (or you, in two years) run them
+and get *your* published numbers? This is a property of your files and
+your computer, not of the world. If it fails, something is broken:
+a missing data step, an unstated software version, a hard-coded path,
+a lost random seed.
+
+**Replicability** is the larger scientific question: if someone
+gathers *new* data and runs a *comparable* analysis, do they reach a
+consistent conclusion? This is a property of the finding, not the
+files. It can fail even when your code is perfect, because the
+original effect was noise, was specific to one sample, or was inflated
+by selective reporting.
+
+The terms get used in opposite ways across fields, so always check
+which one a given paper means. This book can only directly help with
+the first: Git and a disciplined project layout make your work
+*reproducible*. But reproducibility is the precondition for everything
+else. A finding that cannot even be reproduced from its own files
+cannot be defended, corrected, or built on, and the replication
+evidence below suggests that bar is missed far more often than anyone
+is comfortable with.
+
+## The economics evidence
+
+Start close to home. In 2015, Andrew Chang and Phillip Li, then at the
+Federal Reserve Board, tried to reproduce 67 empirical papers from 13
+well-regarded economics journals, using the authors' own data and
+code. Not to test whether the findings were *true*, just whether the
+published numbers came back out of the published materials. Working
+from the replication files alone, without contacting the authors, they
+reproduced the key qualitative result of 22 of 67 papers, about 33
+percent. Even after writing to authors for help, and setting aside
+papers using confidential data or software they lacked, they got to 29
+of 59, about 49 percent. Their conclusion is quotable precisely
+because it is so blunt: "we are able to replicate less than half of
+the papers in our sample even with help from the authors," and so "we
+assert that economics research is usually not replicable."
+
+One detail in their numbers is the whole argument of this book in
+miniature. Among papers whose journals *required* data and code to be
+deposited, they obtained working replication files for 83 percent.
+Among papers whose journals did *not* require it, they obtained them
+for 42 percent. The single biggest predictor of whether the work could
+be checked was not the topic or the authors' care. It was whether an
+institution forced the materials into the open.
+
+Experimental economics tells the same story from a different angle. In
+a 2016 *Science* study, Colin Camerer and a large team pre-registered
+and re-ran 18 laboratory experiments published in the *American
+Economic Review* and the *Quarterly Journal of Economics* between 2011
+and 2014, with at least 90 percent statistical power to detect the
+original effects. They found a significant effect in the same
+direction as the original for 11 of the 18, about 61 percent. And
+where effects did appear, they were smaller than first reported: on
+average the replicated effect size was 66 percent of the original.
+These were strong studies in the best journals, run by sympathetic
+replicators. A third still did not hold up.
+
+## The same crack runs through the social sciences
+
+If this were unique to economics, it might be a disciplinary quirk.
+It is not. The most cited single result came from psychology: in 2015
+the Open Science Collaboration repeated 100 studies from three leading
+psychology journals. In the originals, 97 percent reported a
+statistically significant effect. In the replications, 36 percent did.
+The replicated effects, where they survived, were about half the
+magnitude of the published ones. A field looked at its own flagship
+results and could reproduce roughly one in three.
+
+The bridge back to the social sciences generally was built in 2018,
+when Camerer's group turned the same machinery on 21 experimental
+social-science papers published in *Nature* and *Science* between 2010
+and 2015, the most visible venues there are. They confirmed a
+significant same-direction effect for 13 of 21, about 62 percent,
+again at roughly half the original effect size. The number lands in
+the same band as the economics studies, which is the point: across
+economics, psychology, and the broad social sciences, somewhere around
+a third to a half of published, peer-reviewed, headline findings do
+not come back when someone careful tries to get them back.
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+Notice what these projects could and could not do. They could attempt
+*replication* (new data) only after first achieving *reproducibility*
+(getting the original analysis to run at all). Chang and Li spent much
+of their effort just obtaining files that would execute. Every hour a
+replicator spends reconstructing your environment is an hour not spent
+checking your science. A clean, version-controlled, rebuild-from-code
+project is not bureaucratic compliance. It is the thing that lets your
+work enter the scientific record instead of stalling at the door.
+:::
+
+## Why this is now your problem, not just a debate
+
+Two responses to this evidence matter for how you will actually work.
+
+The first is cultural: incentives reward novel, significant, publishable
+findings and barely reward careful, reproducible ones, which is most of
+how the literature filled up with results that do not return. You
+cannot fix the incentive system by yourself. You can refuse to add to
+the pile.
+
+The second is institutional, and it has teeth. The American Economic
+Association, publisher of the *AER* and the *AEJ* family, now operates
+a Data and Code Availability Policy enforced by a dedicated Data
+Editor. The policy is explicit: "Prior to acceptance, authors of
+papers that contain empirical work, simulations, or experimental work
+must provide the data, code, and other details of the computations
+sufficient to permit replication," deposited in a trusted repository.
+And the Association does not take this on trust. The Data Editor "will
+assess compliance with this policy, including by conducting
+reproducibility checks and verifying the accuracy of the information
+provided." In practice that means a member of the editorial staff
+downloads your replication package and, within reasonable limits of
+time and computing, actually runs your code to confirm it produces the
+numbers in your accepted paper, before that paper is published. This
+model, an editor who runs your code, has spread across the top
+economics journals and into political science and other fields through
+a shared Data and Code Availability Standard.
+
+So the question "can a stranger rebuild my results from my files?" is
+no longer hypothetical or optional. It is a step between acceptance and
+publication at the journals you most want to publish in. The skills in
+this book are how you pass it without a scramble. Chapter 15 returns to
+the full replication package; here the point is only that
+reproducibility has become a gate, and version control is how you walk
+through it calmly.
+
+## What Git does, and what it does not
+
+A warning that will shape every chapter that follows. Git, the tool
+this book teaches, versions *text*: your code, your scripts, your
+notes, your manuscript. It does this superbly. It does *not*, on its
+own, reproduce two things that reproducibility equally depends on:
+your **data** and your **software environment**. A repository that
+faithfully tracks every line of code but assumes a 2 GB dataset nobody
+else can obtain, running under package versions nobody recorded, is
+version-controlled and still not reproducible. Closing that gap, with
+seeded data generators, data repositories and DOIs, and locked
+environments, is the subject of Chapter 8. Keep the distinction in
+view from the start: Git is necessary for reproducible research, and it
+is not sufficient.
+
+## The worked case: this book's own example
+
+Throughout the book we use one running example, a small, fully
+simulated minimum-wage difference-in-differences study living in
+`sandbox/minwage-did`. It is built to be a model of the practices this
+chapter argues for, and we will keep returning to it. Its entire
+history is four commits:
+
+```bash
+$ git log --oneline
+dcb18de Note headline result in README
+f9a193f Add DiD analysis, report, and main table
+758175e Add polars cleaning script
+20c7835 Set up project skeleton and data generator
+```
+
+That is the whole project told as a sequence of labelled snapshots:
+skeleton and data generator, then cleaning, then analysis, then the
+written-up result. Anyone can read how the study was built by reading
+its history, and anyone can rebuild it, because the data are produced
+by a seeded script rather than shipped as a file, and the software
+versions are pinned in a lockfile. Code in Git, data from a seed,
+environment in a lockfile: that combination is what makes the example
+reproducible, and it is the spine of everything that follows.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+The most common way research fails to reproduce is not fraud or even
+incompetence. It is drift: an undocumented manual edit to a
+spreadsheet, a figure regenerated from data that quietly changed, a
+result from a script that no longer exists in the form that produced
+it. Every one of these is a thing version control is built to prevent.
+The danger is not a dramatic disaster; it is the slow, invisible
+divergence between what you published and what your files can now
+produce.
+:::
+
+## What you can now do
+
+You can state, precisely, why reproducibility matters and how it
+differs from replicability; cite the economics and broader
+social-science evidence that roughly a third to a half of published
+findings do not reproduce; and explain why journals now enforce data
+and code availability before they will publish you. What you cannot yet
+do is the practical work of making your own projects reproducible. That
+starts in the next chapter, with what Git actually is, and continues
+through the daily habits in Chapter 5. The argument is made; the rest
+of the book is the method.
+
+## Try it yourself {.unnumbered}
+
+No Git commands yet, just an honest audit of your current practice.
+
+1. Take your most recent empirical project. Could a careful stranger,
+   given only what you would hand over today, reproduce your main table
+   without emailing you? Write down, concretely, every step that would
+   break.
+2. For that same project, separate the two failure modes from this
+   chapter: which problems are *reproducibility* gaps (your own files
+   will not produce your own numbers) and which are *replicability*
+   questions (the finding itself might not hold in new data)?
+3. Look up whether your target journal has a data and code availability
+   policy, and whether it verifies submissions. If it does, read what
+   it would require of you, then ask whether you could meet it this
+   week. The honest answer is the reason to keep reading.

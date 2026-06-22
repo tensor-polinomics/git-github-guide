@@ -1,0 +1,228 @@
+# What Must Never Be Committed
+
+Git is built to remember everything forever. That is exactly what you
+want for code and exactly what you do not want for a leaked password.
+This chapter is about the second category: the files that must stay
+out of your history, why a `.gitignore` is not enough on its own, and
+the one emergency procedure for when a secret gets in anyway.
+
+The stakes are higher in research than in ordinary software. A leaked
+API key can be rotated. Restricted microdata, licensed vendor data
+(CRSP, Compustat, a confidential survey), or a file with personally
+identifiable information cannot be un-leaked, and committing it can
+breach a data-use agreement or an IRB protocol. Treat this chapter as
+a safety procedure, not a style preference.
+
+## The four things that must never be committed
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+Keeping these out of Git does not make your project less
+reproducible. It makes it *legitimately* reproducible: the package
+ships code plus instructions to obtain the data, not a copy of data
+you have no right to redistribute. Chapter 8 covers how to version
+and cite data properly; Chapter 15 covers the full replication
+package.
+:::
+
+1. **Large or derived data.** Raw inputs and anything your scripts
+   regenerate. Git stores every version of every file forever, so a
+   data file that changes weekly will bloat the repo permanently. It
+   also belongs to a pipeline, not to history: it should be rebuilt
+   from code (Chapter 8).
+2. **Restricted, confidential, or licensed data.** Microdata under a
+   data-use agreement, vendor data you licensed but cannot
+   redistribute, anything with PII. Committing it can be a contract
+   or privacy violation, not just clutter.
+3. **Credentials.** API keys, database passwords, tokens, `.pem`
+   files, `.env` files. Anyone who can read the repo, now or from any
+   past commit, can read the secret.
+4. **Personal and OS noise.** `.DS_Store`, editor configs,
+   `__pycache__`. Harmless but unprofessional, and they cause
+   spurious merge conflicts.
+
+## The `.gitignore`, and its one limitation {.tier-beginner}
+
+A `.gitignore` lists patterns Git should refuse to stage. The running
+example's file ignores the data and output directories, `.env`, and
+the usual noise. Chapter 5 showed it working: an ignored file simply
+never appears in `git status`.
+
+Here is the limitation that catches everyone. **`.gitignore` only
+prevents *new* files from being tracked. It does nothing to a file
+Git is already tracking.** If you committed `analysis.csv` before you
+wrote the ignore rule, adding the rule changes nothing; Git keeps
+tracking the file it already knows.
+
+To stop tracking a file while keeping your local copy, use
+`git rm --cached`.
+
+```bash
+$ git ls-files
+data/clean/analysis.csv
+run.py
+
+$ echo 'data/clean/' >> .gitignore
+$ git rm --cached data/clean/analysis.csv
+rm 'data/clean/analysis.csv'
+$ git commit -q -m "Stop tracking derived data"
+
+$ git ls-files
+run.py
+
+$ ls data/clean/
+analysis.csv
+```
+
+`git ls-files` (the list of tracked files) no longer includes the
+CSV, but `ls` shows it is still on disk. You have untracked it going
+forward without losing the file.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+`git rm --cached` stops *future* tracking, but the file is **still in
+your history** in every commit that already contained it. For a
+derived CSV that is fine. For a secret it is not nearly enough:
+anyone can check out the old commit and read it. Removing a secret
+from history needs the heavier tool below.
+:::
+
+## When a secret gets committed anyway {.tier-advanced}
+
+Eventually someone commits a credentials file. Here is the situation,
+built for real with scanner-safe fake values: a pretend vendor key and
+a pretend database password were committed in `config/secrets.yaml`,
+then buried under later work.
+
+```bash
+$ git log --oneline
+6f85d78 Add main() to pull script
+1e7f56a Wire up vendor credentials
+3a16703 Start data-pull script
+
+$ git log --oneline -- config/secrets.yaml
+1e7f56a Wire up vendor credentials
+
+$ git show HEAD~1:config/secrets.yaml
+vendor_api_key: "DEMO_VENDOR_KEY_NOT_A_SECRET"
+db_password: "DEMO_PASSWORD_NOT_A_SECRET"
+```
+
+The secret is two commits deep, but `git show` pulls it straight back
+out. Anyone with the repo can do the same.
+
+### Step 0, before any Git command: rotate the secret
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+GitHub's own guidance is blunt about the order of operations: "if the
+sensitive data you need to remove is a secret (e.g.
+password/token/credential), as is often the case, then as a first
+step you need to revoke and/or rotate that secret." Once the key is
+revoked it cannot be used, and that may be the *whole* fix. Rewriting
+history removes the embarrassment; rotating the key removes the
+danger. Do the rotation first, every time.
+:::
+
+Assume the worst: the moment a secret is pushed anywhere others can
+see, treat it as compromised. Rotation is not optional cleanup, it is
+the actual remediation.
+
+### Step 1: purge the file from history with git-filter-repo
+
+The modern tool for rewriting history is `git-filter-repo`. (Do not
+use `git filter-branch`, which is slow and error-prone, or chase the
+old BFG tutorials; GitHub's current documentation builds its
+procedure around filter-repo.) Install it with `pip install
+git-filter-repo` or `brew install git-filter-repo`; you want at least
+version 2.47.
+
+```bash
+$ git filter-repo --invert-paths \
+      --path config/secrets.yaml --force
+Parsed 3 commits
+HEAD is now at 871835e Add main() to pull script
+New history written in 0.03 seconds; now repacking/cleaning...
+Repacking your repo and cleaning out old unneeded objects
+Completely finished after 0.11 seconds.
+```
+
+`--invert-paths --path X` means "keep everything except X". Now check
+what happened to the history.
+
+```bash
+$ git log --oneline
+871835e Add main() to pull script
+3a16703 Start data-pull script
+
+$ git log --oneline -- config/secrets.yaml
+
+$ git show HEAD~1:config/secrets.yaml
+fatal: path 'config/secrets.yaml' does not exist in 'HEAD~1'
+```
+
+The secret is gone from every commit. Look closely at the hashes,
+because they tell the real story. The first commit (`3a16703`) is
+unchanged. The commit that *introduced* the secret is gone entirely,
+and the commit that came after it was rewritten from `6f85d78` to
+`871835e`.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+Rewriting history "will change the hashes of the commits that
+introduced the sensitive data *and* all commits that came after"
+(GitHub Docs). Every collaborator's clone now disagrees with yours.
+If a colleague runs `git pull` and then `git push` from an old clone,
+the secret comes straight back: GitHub calls this the "high risk of
+recontamination." After a rewrite, everyone must re-clone or follow
+filter-repo's clean-up steps, and you must force-push. This is why
+prevention beats rescue.
+:::
+
+### Step 2: the parts Git cannot fix
+
+A local rewrite plus a force-push is still not the end if the secret
+ever reached GitHub. The verified guidance is unambiguous: the secret
+may persist "In any clones or forks," "Directly via their SHA-1
+hashes in cached views on GitHub," and "Through any pull requests
+that reference them." You cannot scrub other people's clones, and
+removing cached views and PR references requires contacting GitHub
+Support, who will only act "in cases where we determine that the risk
+can't be mitigated by rotating affected credentials." Which returns
+you to Step 0: the rotation was always the part that mattered.
+
+## Prevention that actually works {.tier-beginner}
+
+::: {.callout-tip .recovery title="RECOVERY"}
+Build these habits and you will almost never need filter-repo:
+
+- Keep secrets in environment variables or a `.env` file, and put
+  `.env` in `.gitignore` from the first commit. Reference
+  `os.environ["VENDOR_API_KEY"]` in code, never the literal key.
+- Stage by name. Review with `git status` and `git diff --staged`
+  before committing. Avoid the reflexive `git add .`.
+- Add data directories and `*.parquet`-type patterns to `.gitignore`
+  before you generate any data.
+- If your host offers it, turn on **push protection**. GitHub's
+  secret scanning "blocks pushes that contain secrets before they
+  reach your repository," giving you a last line of defence at push
+  time. It is a backstop, not a substitute for the habits above, and
+  on private repositories it requires a plan that includes it.
+:::
+
+## Try it yourself {.unnumbered}
+
+Work in a *throwaway* clone of the running example so you cannot harm
+real history.
+
+1. Create `config/secrets.yaml` with a fake `api_key:` line, commit
+   it, then add two more unrelated commits on top. Confirm with
+   `git show` that the key is retrievable from history.
+2. Write down what you would rotate first if this were a real key,
+   and where you would do it. (This step is not a Git command, and
+   that is the point.)
+3. Remove the file from all history with `git filter-repo
+   --invert-paths --path config/secrets.yaml --force`. Verify with
+   `git log --oneline -- config/secrets.yaml` that nothing remains.
+4. Compare the commit hashes before and after. Which commits kept
+   their hash, and why? Tie your answer to which commit first
+   contained the secret.
+5. Separately: commit a derived `data/clean/out.csv`, then untrack it
+   with `git rm --cached` and a `.gitignore` rule. Explain why this is
+   enough for a derived CSV but not for a leaked password.

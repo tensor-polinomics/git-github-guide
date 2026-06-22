@@ -1,0 +1,12 @@
+$ git log --oneline
+6f85d78 Add main() to pull script
+1e7f56a Wire up vendor credentials
+3a16703 Start data-pull script
+
+# The secret is buried under later work, but still in history:
+$ git log --oneline -- config/secrets.yaml
+1e7f56a Wire up vendor credentials
+
+$ git show HEAD~1:config/secrets.yaml
+vendor_api_key: "DEMO_VENDOR_KEY_NOT_A_SECRET"
+db_password: "DEMO_PASSWORD_NOT_A_SECRET"

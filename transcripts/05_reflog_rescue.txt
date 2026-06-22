@@ -1,0 +1,21 @@
+$ git log --oneline -1
+7b13816 Revert "Note small-sample filter as a TODO"
+
+# Disaster: a careless hard reset throws away 2 commits.
+$ git reset --hard HEAD~2
+HEAD is now at dcb18de Note headline result in README
+$ git log --oneline -1
+dcb18de Note headline result in README
+
+# The reflog still remembers where HEAD was.
+$ git reflog -4
+dcb18de HEAD@{0}: reset: moving to HEAD~2
+7b13816 HEAD@{1}: revert: Revert "Note small-sample filter as a TODO"
+e57cce6 HEAD@{2}: commit: Note small-sample filter as a TODO
+dcb18de HEAD@{3}: clone: from /sessions/gallant-vigilant-ptolemy/ggwork/minwage-did
+
+# Recover by pointing HEAD back at the lost commit.
+$ git reset --hard 7b13816
+HEAD is now at 7b13816 Revert "Note small-sample filter as a TODO"
+$ git log --oneline -1
+7b13816 Revert "Note small-sample filter as a TODO"

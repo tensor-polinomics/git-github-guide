@@ -1,0 +1,6 @@
+$ git log --oneline
+c1c408c Pin the software environment with a uv lockfile
+dcb18de Note headline result in README
+f9a193f Add DiD analysis, report, and main table
+758175e Add polars cleaning script
+20c7835 Set up project skeleton and data generator

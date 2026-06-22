@@ -1,0 +1,27 @@
+.DS_Store
+.Rhistory
+.env
+*.pem
+secrets.*
+
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+book/.quarto/
+book/_book/
+book/_book-html/
+book/_book-pdf/
+*_cache/
+*_files/
+
+# The nested sandbox has its own project-specific ignore rules for
+# generated data and figures.
+
+# Private build scaffolding: kept local for the authoring workflow,
+# not published. (verification/ and transcripts/ ARE published as the
+# reproducibility record.)
+/CLAUDE.md
+/PLAN.md
+/RESUME.md

@@ -1,0 +1,6 @@
+$ git status -s
+(blank = clean: data/ is git-ignored, rebuilt locally)
+$ git status --ignored -s | head
+!! .venv/
+!! data/
+!! output/figures/

@@ -1,0 +1,203 @@
+# Git and GitHub in the AI Age
+
+AI coding agents can now run Git for you. You describe a change in
+plain language and the agent edits files, stages them, writes a
+commit message, and commits. Used well, this is a real speedup. Used
+carelessly, it is a new and efficient way to corrupt your history or
+leak your data.
+
+This chapter is deliberately blunt, because the failure modes are
+concrete and some are irreversible. The good news is that the same
+Git skills from the rest of the book are exactly what make agent use
+safe. Git is the seatbelt. The agent is a faster car.
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+An agent that writes code you never read is the opposite of
+reproducible. Reproducibility requires that *you* can explain and
+defend every line in your analysis. "The AI wrote it" is not an
+answer a referee, a coauthor, or a data editor will accept. Use the
+agent to draft; stay the author.
+:::
+
+## The dividing line: who reviews, who decides
+
+The single rule that organizes this whole chapter: **an agent may
+propose any change, but a human must review and decide anything that
+is hard to undo.** Editing a file is easy to undo (Chapter 5).
+Rewriting public history or leaking a secret is not (Chapter 6).
+Route the agent's power accordingly.
+
+It helps that well-designed agent tools already draw a version of
+this line. Claude Code, for example, runs a built-in set of read-only
+commands such as `ls`, `cat`, and `git status` without asking, but
+requires explicit permission before any command that modifies your
+system, approved once or added to an allowlist. It can only write
+inside the folder where it was started, and commands that fetch from
+the web are not auto-approved. There is a "bypass permissions" mode
+that approves everything, and the documentation flags it for use
+"with extreme caution." Take that flag seriously: bypass mode plus
+Git is how an agent force-pushes over your afternoon's work without a
+prompt.
+
+## When to drive the terminal yourself
+
+Do it yourself, every time, for the operations where a mistake is
+expensive and a human pause is cheap:
+
+- **Anything that rewrites shared history**: `git push --force`,
+  `git rebase` of pushed commits, `git reset --hard` on a shared
+  branch, `git filter-repo`. These change commit hashes for you and
+  everyone downstream (Chapter 6). An agent firing one of these
+  unsupervised can rewrite a branch your coauthors are building on.
+- **Resolving a merge conflict in analysis code.** The agent does not
+  know which of two regression specifications is the one your paper
+  reports. You do. Conflicts are a moment for judgment, not
+  autocomplete.
+- **The first push of anything that might contain data or secrets.**
+  Look at the file list yourself.
+
+## What an agent must never do unsupervised
+
+Treat these as hard stops. If an agent proposes one, the answer is a
+human review, not a yes:
+
+1. **Force-push or rewrite published history.** The recontamination
+   and lost-work risks from Chapter 6 apply in full, now at machine
+   speed.
+2. **Run `git reset --hard`, `git clean -fd`, or delete branches**
+   without you seeing exactly what will be discarded. These destroy
+   uncommitted work, which the reflog cannot always recover.
+3. **Commit data or credentials.** An agent happily runs `git add .`
+   and sweeps in `data/` and `.env` unless your `.gitignore` stops
+   it. The ignore file is doing more work than ever now.
+4. **Rotate or "handle" a leaked key on its own.** If a secret is
+   exposed, revoking and rotating it is a human security decision with
+   real-world side effects (Chapter 6). The agent can draft the steps;
+   you execute them.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+The dangerous pattern is "let it run and see what happens." An agent
+in an auto-approve mode, pointed at a repo with a weak `.gitignore`,
+can stage a restricted dataset and push it to a public remote in one
+uninterrupted sequence. Nothing about that is recoverable: once data
+under a use agreement is public, it is public. Keep auto-approve off
+for anything that writes to a remote.
+:::
+
+## The workflow that makes agents safe {.tier-beginner}
+
+You already know every command in this section. The discipline is to
+apply them around the agent, not instead of it.
+
+### Start from a clean, committed checkpoint
+
+Before you let an agent touch anything, be at a known-good state. A
+clean working tree is your rollback point.
+
+```bash
+$ git status -s
+```
+
+No output means clean. If `git status` shows changes, commit or stash
+them first, so that anything the agent does next is clearly
+attributable and trivially reversible.
+
+### Let the agent work, then review every line
+
+Suppose you ask an agent to switch the analysis to clustered standard
+errors. It edits `02_analysis.py`. Before you trust a word of it, read
+the diff.
+
+```bash
+$ git status -s
+ M scripts/02_analysis.py
+
+$ git diff
+diff --git a/scripts/02_analysis.py b/scripts/02_analysis.py
+index 0f17840..a84fb36 100644
+--- a/scripts/02_analysis.py
++++ b/scripts/02_analysis.py
+@@ -21,6 +21,7 @@ matplotlib.use("Agg")
+ import matplotlib.pyplot as plt
+ import pyfixest as pf
+ import polars as pl
++# Use clustered SEs by county (agent suggestion)
+
+ CLEAN = Path("data/clean/analysis.parquet")
+ TAB = Path("output/tables")
+@@ -67,3 +68,5 @@ def main() -> None:
+
+ if __name__ == "__main__":
+     main()
++
++OUTDIR = "/Users/agent/scratch/out"  # agent hard-coded path
+```
+
+The agent did two things: a harmless comment, and something you did
+*not* ask for, a hard-coded absolute path pointing at a machine that
+is not yours. That second line would break reproducibility for anyone
+who ran the script. This is the entire reason to read diffs: agents
+mix the change you wanted with changes you did not, stated with
+identical confidence.
+
+### Reject or accept deliberately, never wholesale
+
+Because the change is not clean, throw it away and return to the
+checkpoint.
+
+```bash
+$ git restore scripts/02_analysis.py
+$ git status -s
+```
+
+Clean again; nothing the agent did was committed. You can now ask
+again more precisely, or stage only the good parts with `git add -p`.
+The point is that *you* decided what entered history, line by line.
+
+::: {.callout-tip .recovery title="RECOVERY"}
+If an agent already committed something wrong but you have not shared
+it, the ordinary tools apply: `git revert` to undo a commit safely, or
+`git reset --soft HEAD~1` to uncommit while keeping the changes
+staged for review. And the reflog remains your backstop: reachable
+entries are kept 90 days by default, so even after a bad agent-driven
+reset you can usually find and restore the previous state with `git
+reflog` (Chapter 5). What the reflog cannot save is a force-push that
+others have already pulled, which is why that one stays human.
+:::
+
+## A sane division of labor {.tier-advanced}
+
+A practical split that keeps the speed without the risk:
+
+- **Let the agent**: draft code and docstrings, write first-pass
+  commit messages, explain an unfamiliar diff or error, scaffold a
+  `.gitignore`, summarize what changed in a branch, suggest a rebase
+  plan (for you to run).
+- **Keep for yourself**: the final commit decision after reading the
+  diff, all force-pushes and history rewrites, merge-conflict
+  resolution in analysis code, secret rotation, and the first push of
+  any new repository.
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+Commit messages written by an agent are fine, but verify they match
+what actually changed. A misleading message ("Fix standard errors"
+on a commit that also silently changed the sample) is worse than no
+message, because it makes the history *look* trustworthy. The commit
+log is part of your replication record; keep it honest.
+:::
+
+## Try it yourself {.unnumbered}
+
+Working in a throwaway clone of the running example:
+
+1. Confirm a clean working tree, then make two edits to
+   `02_analysis.py` by hand, one good and one deliberately wrong (say,
+   a hard-coded path), to stand in for an agent's mixed output.
+2. Run `git diff` and identify which hunk you would keep. Use
+   `git add -p` to stage only that hunk, then `git diff --staged` to
+   confirm you staged exactly what you intended.
+3. `git restore` the rest. Verify with `git status -s` that only the
+   intended change survives.
+4. Write one sentence for each of the four "never unsupervised"
+   actions, explaining in your own words why a human pause is worth
+   more than the speed an agent would save.

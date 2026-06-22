@@ -1,0 +1,13 @@
+* text=auto
+*.qmd text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+*.yml text eol=lf
+*.toml text eol=lf
+*.lock text eol=lf
+*.txt text eol=lf
+
+*.pdf binary
+*.png binary
+*.bundle binary
+*.parquet binary
