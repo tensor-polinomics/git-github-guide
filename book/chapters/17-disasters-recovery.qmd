@@ -25,7 +25,7 @@ becoming permanent:
    *new* commit (`revert`) instead of rewriting shared history.
 :::
 
-## Symptom-to-fix table
+## Symptom-to-fix table {.unnumbered}
 
 | Symptom | Fix | Section |
 |---|---|---|
@@ -39,7 +39,7 @@ becoming permanent:
 | A merge is going wrong | `git merge --abort` | [8](#sec-mergeabort) |
 | A secret is buried in history | rotate it, then `git filter-repo` | [9](#sec-secret) |
 
-## 1. Restore a file to its committed version {#sec-restore}
+## 1. Restore a file to its committed version {#sec-restore .unnumbered}
 
 You edited a file, the edit is wrong, and you want the last committed
 version back. `git restore` overwrites the working copy from the repo.
@@ -60,7 +60,7 @@ This is the one common operation that is genuinely irreversible. Be sure
 you want the edit gone before you run it.
 :::
 
-## 2. Unstage a file you added by mistake {#sec-unstage}
+## 2. Unstage a file you added by mistake {#sec-unstage .unnumbered}
 
 You ran `git add` (often the reflexive `git add .`) and pulled in
 something that should not be staged. `git restore --staged` removes it
@@ -78,7 +78,7 @@ $ git status --short
 The file went from staged (`A`) back to untracked (`??`): unstaged, but
 not deleted.
 
-## 3. Move a commit off the wrong branch {#sec-wrongbranch}
+## 3. Move a commit off the wrong branch {#sec-wrongbranch .unnumbered}
 
 You committed on `main` but the work belonged on a feature branch, and
 you have not pushed. Create a branch at the current commit (which keeps
@@ -99,7 +99,7 @@ dcb18de Note headline result in README
 `main` is back where it should be, and the commit now lives on
 `experiment`, ready to keep building on.
 
-## 4. Drop a file from your last commit {#sec-amend}
+## 4. Drop a file from your last commit {#sec-amend .unnumbered}
 
 Your most recent commit included a large data file (or any wrong file)
 and you have not pushed. Untrack the file, ignore it, and amend the
@@ -134,7 +134,7 @@ in Section 9. And if the file was a secret, ignoring it is never enough
 on its own (Chapter 6): rotate it.
 :::
 
-## 5. Undo a commit that is already pushed {#sec-revert}
+## 5. Undo a commit that is already pushed {#sec-revert .unnumbered}
 
 A bad commit is already on the shared remote. Do not rewrite history:
 that breaks every collaborator's clone (Chapter 7). Instead, `git
@@ -157,7 +157,7 @@ dcb18de Note headline result in README
 The error is undone by a forward commit (`d965d52`); the original commit
 stays in history, so nothing your collaborators have is invalidated.
 
-## 6. Recover commits lost to a reset or bad rebase {#sec-reflog}
+## 6. Recover commits lost to a reset or bad rebase {#sec-reflog .unnumbered}
 
 A careless `git reset --hard` (or a botched rebase, Chapter 7) appears
 to have destroyed commits. It did not. The reflog still holds them.
@@ -178,7 +178,7 @@ HEAD is now at 2392ecf Add analysis B
 lost commits at once. (For a rebase specifically, `git reset --hard
 ORIG_HEAD` does the same without reading the reflog.)
 
-## 7. Rescue commits made on a detached HEAD {#sec-detached}
+## 7. Rescue commits made on a detached HEAD {#sec-detached .unnumbered}
 
 You checked out an old commit to look around, then committed. Those
 commits belong to no branch and would be garbage-collected eventually.
@@ -197,7 +197,7 @@ f9a193f Add DiD analysis, report, and main table
 The experiment now lives on `saved-experiment`; it can no longer be lost
 to garbage collection.
 
-## 8. Back out of a merge in progress {#sec-mergeabort}
+## 8. Back out of a merge in progress {#sec-mergeabort .unnumbered}
 
 A merge hit conflicts and you would rather not resolve them now (wrong
 branch, bad timing). `git merge --abort` returns the tree to exactly its
@@ -218,7 +218,7 @@ The clean `git status` and unchanged tip show the merge attempt left no
 trace. (If a bad merge already *completed*, `git reset --hard
 ORIG_HEAD` undoes it the same way, as long as you have not pushed.)
 
-## 9. Purge a secret buried in history {#sec-secret}
+## 9. Purge a secret buried in history {#sec-secret .unnumbered}
 
 A credentials file was committed and is now several commits deep. This
 is the one case where you must rewrite history even though it is
@@ -254,7 +254,7 @@ The final empty `git log` confirms the file exists in no commit. After
 this you must force-push and have collaborators re-clone, and the secret
 must already have been rotated (Step 0).
 
-## The golden rules, restated
+## The golden rules, restated {.unnumbered}
 
 When the panic passes, these are the habits that turn most disasters
 into minor detours: commit small and often so any lost work is small;
