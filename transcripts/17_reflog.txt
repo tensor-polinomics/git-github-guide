@@ -1,0 +1,16 @@
+# Symptom: a careless hard reset wiped two commits.
+$ git reset --hard HEAD~2
+HEAD is now at dcb18de Note headline result in README
+$ git log --oneline -1
+dcb18de Note headline result in README
+# They are not gone. The reflog still points at them.
+$ git reflog -4
+dcb18de HEAD@{0}: reset: moving to HEAD~2
+2392ecf HEAD@{1}: commit: Add analysis B
+67e52cc HEAD@{2}: commit: Add analysis A
+dcb18de HEAD@{3}: checkout: moving from dcb18de650c577b036ffc179a1b4c6544a2c838b to main
+# Recover by resetting to the lost tip.
+$ git reset --hard HEAD@{1}
+HEAD is now at 2392ecf Add analysis B
+$ git log --oneline -1
+2392ecf Add analysis B

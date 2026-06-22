@@ -1,0 +1,5 @@
+# Symptom: you edited a file and want the committed version back.
+$ git status --short
+ M README.md
+$ git restore README.md
+$ git status --short

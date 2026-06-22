@@ -1,0 +1,31 @@
+# Imagine this were a huge repo and you only needed the scripts.
+# A full checkout has every directory on disk:
+$ ls
+README.md
+output
+report.qmd
+scripts
+
+# Turn on cone-mode sparse-checkout and keep only scripts/.
+$ git sparse-checkout init --cone
+$ git sparse-checkout set scripts
+# Cone mode keeps top-level files and the chosen directory;
+# other directories (output/) leave the working tree:
+$ ls
+README.md
+report.qmd
+scripts
+$ git sparse-checkout list
+scripts
+
+# Nothing was deleted from the repo: git still tracks output/.
+$ git ls-files output/
+output/tables/did_main.txt
+
+# Undo: restore the full working tree.
+$ git sparse-checkout disable
+$ ls
+README.md
+output
+report.qmd
+scripts

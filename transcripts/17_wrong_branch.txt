@@ -1,0 +1,15 @@
+# Symptom: you committed on main, but it belonged on a feature
+# branch (and you have NOT pushed).
+$ git log --oneline -2
+51ea46e Try an experimental specification
+dcb18de Note headline result in README
+# Move it: make a branch here (keeps the commit), then rewind main.
+$ git branch experiment
+$ git reset --hard HEAD~1
+HEAD is now at dcb18de Note headline result in README
+$ git log --oneline -1
+dcb18de Note headline result in README
+# The commit now lives on experiment, and main is clean again.
+$ git log --oneline -2 experiment
+51ea46e Try an experimental specification
+dcb18de Note headline result in README

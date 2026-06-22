@@ -1,0 +1,23 @@
+# You are mid-analysis on main when referee comments arrive.
+# Instead of stashing, check out a second branch in its own
+# folder, so both stay open at once. (Paths show $HOME as ~.)
+$ git worktree add ../revision -b revision
+Preparing worktree (new branch 'revision')
+HEAD is now at dcb18de Note headline result in README
+
+# Two working directories, two branches, one shared history:
+$ git worktree list
+~/research/minwage-did  dcb18de [main]
+~/research/revision     dcb18de [revision]
+
+# The new folder is on the revision branch...
+$ git -C ../revision branch --show-current
+revision
+# ...while the original is still on main:
+$ git branch --show-current
+main
+
+# When the revision work is merged, remove the worktree.
+$ git worktree remove ../revision
+$ git worktree list
+~/research/minwage-did  dcb18de [main]

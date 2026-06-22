@@ -1,0 +1,11 @@
+# Symptom: you checked out an old commit to look around, then
+# committed. Git warns you are on a detached HEAD.
+$ git switch --detach HEAD~1
+HEAD is now at f9a193f Add DiD analysis, report, and main table
+# This commit is on no branch. Save it by naming a branch here:
+$ git switch -c saved-experiment
+Switched to a new branch 'saved-experiment'
+$ git log --oneline -2
+47cc466 Experiment from an old commit
+f9a193f Add DiD analysis, report, and main table
+# Back on main, the work is safe on its own branch.

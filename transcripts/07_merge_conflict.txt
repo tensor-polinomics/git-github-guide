@@ -1,0 +1,35 @@
+# Two branches changed the SAME line. Merging triggers a conflict.
+$ git merge --no-edit coauthor-wording
+Auto-merging README.md
+CONFLICT (content): Merge conflict in README.md
+Automatic merge failed; fix conflicts and then commit the result.
+$ git status
+On branch main
+You have unmerged paths.
+  (fix conflicts and run "git commit")
+  (use "git merge --abort" to abort the merge)
+
+Unmerged paths:
+  (use "git add <file>..." to mark resolution)
+	both modified:   README.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+# Git left conflict markers in the file:
+$ sed -n '36,46p' README.md
+## Headline result
+
+<<<<<<< HEAD
+The DiD estimate is a 1.9 pp drop in treated counties (SE 0.4 pp).
+=======
+Treated counties saw teen employment fall by about 1.9 percentage points.
+>>>>>>> coauthor-wording
+# Resolve by hand: keep one final line, delete the markers.
+$ git add README.md
+$ git commit --no-edit -q
+$ git log --oneline --graph -4
+*   067058c Merge branch 'coauthor-wording'
+|\  
+| * 362b852 Reword headline result (coauthor)
+* | 40a7427 Add SE to headline result
+|/  
+* dcb18de Note headline result in README

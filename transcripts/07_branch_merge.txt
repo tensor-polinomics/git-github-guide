@@ -1,0 +1,18 @@
+# A feature branch for a robustness check, merged back into main.
+$ git switch -c robust-se
+Switched to a new branch 'robust-se'
+$ git switch main
+Switched to branch 'main'
+# main and robust-se have now diverged; merge is a real 3-way merge.
+$ git merge --no-edit robust-se
+Merge made by the 'ort' strategy.
+ report.qmd | 2 ++
+ 1 file changed, 2 insertions(+)
+$ git log --oneline --graph -5
+*   3f60bca Merge branch 'robust-se'
+|\  
+| * d938421 Note clustered-SE robustness check in report
+* | 05c4464 Cross-reference the report from the README
+|/  
+* dcb18de Note headline result in README
+* f9a193f Add DiD analysis, report, and main table

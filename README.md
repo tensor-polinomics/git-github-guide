@@ -7,11 +7,11 @@ throughout: a simulated minimum-wage difference-in-differences study
 whose data rebuild from a seeded script and whose result reproduces
 under a locked environment.
 
-> **Status: work in progress.** Six of the seventeen chapters are
-> drafted (1, 3, 5, 6, 8, 16); the rest are stubs being written. The
-> three drafted "exemplar" chapters and the first anchor batch are
-> complete and validated. Expect the table of contents to fill in over
-> time.
+> **Status: work in progress.** Nine of the seventeen chapters are
+> drafted (1, 3, 5, 6, 7, 8, 13, 16, 17); the rest are stubs being
+> written. The drafted "exemplar" chapters, the first anchor batch, and
+> the advanced-Git batch (7, 13, 17) are complete and validated. Expect
+> the table of contents to fill in over time.
 
 ## What is in here
 

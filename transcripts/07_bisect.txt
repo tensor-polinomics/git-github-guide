@@ -1,0 +1,43 @@
+# Somewhere in the last several commits the headline effect
+# flipped sign. smoke_test.py exits 0 if it is negative, 1 if not.
+$ git log --oneline -6
+b0491dc Record county count
+069243a Add notes pointer
+8784fdd Refactor effect constants
+151b299 Stub event-study coefficients
+5fda8a3 Record policy month
+067c7d0 Add effect module and a sign smoke test
+
+# HEAD is broken; the commit that added the test was fine.
+$ git bisect start
+$ git bisect bad HEAD
+$ git bisect good 067c7d0
+Bisecting: 2 revisions left to test after this (roughly 1 step)
+[151b2990159b57e956e4c632a23a7efee8f80824] Stub event-study coefficients
+
+# Let Git run the test at each step and converge automatically:
+$ git bisect run python3 analysis/smoke_test.py
+running  'python3' 'analysis/smoke_test.py'
+OK: effect -0.0189 is negative
+Bisecting: 0 revisions left to test after this (roughly 1 step)
+[069243ae15525213ab2c561ce2118878e2c98fb5] Add notes pointer
+running  'python3' 'analysis/smoke_test.py'
+FAIL: effect 0.0189 is not negative
+Bisecting: 0 revisions left to test after this (roughly 0 steps)
+[8784fdd6bcc1320889674ea495f69ce91d8c54a8] Refactor effect constants
+running  'python3' 'analysis/smoke_test.py'
+FAIL: effect 0.0189 is not negative
+8784fdd6bcc1320889674ea495f69ce91d8c54a8 is the first bad commit
+commit 8784fdd6bcc1320889674ea495f69ce91d8c54a8
+Author: Pat Lee <pat@example.edu>
+Date:   Sat Feb 7 09:04:00 2026 +0000
+
+    Refactor effect constants
+
+ analysis/effect.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+bisect found first bad commit
+# Clean up: return to where we started.
+$ git bisect reset
+Previous HEAD position was 8784fdd Refactor effect constants
+Switched to branch 'main'

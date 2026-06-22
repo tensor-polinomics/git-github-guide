@@ -1,0 +1,21 @@
+# You are mid-edit on a quick experiment when an urgent fix is
+# needed on a clean tree. Park the work without committing it.
+$ git status --short
+ M scripts/02_analysis.py
+$ git stash
+Saved working directory and index state WIP on main: dcb18de Note headline result in README
+$ git status --short
+$ git stash list
+stash@{0}: WIP on main: dcb18de Note headline result in README
+# Do the urgent work on a clean tree... then restore the scratch.
+$ git stash pop
+On branch main
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   scripts/02_analysis.py
+
+no changes added to commit (use "git add" and/or "git commit -a")
+Dropped refs/stash@{0} (7c426ba52bbb8e58b3bd61ea4f8d9c47ca01d2eb)
+$ git status --short
+ M scripts/02_analysis.py

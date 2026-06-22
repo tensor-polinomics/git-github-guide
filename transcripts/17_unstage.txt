@@ -1,0 +1,7 @@
+# Symptom: git add grabbed something you did not mean to stage.
+$ git add .
+$ git status --short
+A  data_dump.csv
+$ git restore --staged data_dump.csv
+$ git status --short
+?? data_dump.csv

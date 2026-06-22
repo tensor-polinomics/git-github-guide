@@ -1,0 +1,14 @@
+# Symptom: a bad commit is already pushed and shared. Do NOT
+# rewrite history; add a new commit that undoes it.
+$ git log --oneline -2
+f835586 Record headline effect (WRONG)
+dcb18de Note headline result in README
+$ git revert --no-edit HEAD
+[main d965d52] Revert "Record headline effect (WRONG)"
+ Date: Thu Feb 12 09:31:00 2026 +0000
+ 1 file changed, 2 deletions(-)
+$ git log --oneline -3
+d965d52 Revert "Record headline effect (WRONG)"
+f835586 Record headline effect (WRONG)
+dcb18de Note headline result in README
+# History is preserved; the error is undone by a forward commit.

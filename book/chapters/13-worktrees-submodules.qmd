@@ -1,17 +1,269 @@
 # Worktrees, Submodules, and Sparse-Checkout
 
-::: {.callout-note appearance="minimal"}
-**Chapter status:** stub. Scope: Advanced tools and honest guidance on when they are worth the complexity.
+The three tools in this chapter solve real problems, but they are not
+part of most research workflows, and reaching for them when a simpler
+option exists is a common way to create work for yourself. This chapter
+is deliberately blunt about that. Each section shows what the tool does,
+on the running example, and then says plainly when it is worth the extra
+complexity and when it is not.
+
+A one-line summary before the detail: worktrees are genuinely useful
+and cheap, and worth knowing; submodules are powerful and painful, and
+worth avoiding unless you specifically need them; sparse-checkout only
+matters for repositories far larger than a typical paper. The decision
+table at the end of the chapter makes the same point in one place.
+
+All commands were run against throwaway clones of the running example's
+`baseline-4commits` tag. Paths are shown with your home directory
+abbreviated to `~`.
+
+## Worktrees: two branches checked out at once {.tier-advanced}
+
+A normal repository has one working directory, so you can only have one
+branch checked out at a time. Switching branches means stashing or
+committing whatever you are in the middle of. A **worktree** lets one
+repository have several working directories, each on its own branch,
+all sharing the same history and object store.
+
+The case where this earns its keep in research is concrete. You are
+deep in an analysis on `main` when referee comments arrive, and you need
+a clean copy on a `revision` branch to start addressing them, without
+disturbing the work in progress. Instead of stashing, add a worktree.
+
+```bash
+$ git worktree add ../revision -b revision
+Preparing worktree (new branch 'revision')
+HEAD is now at dcb18de Note headline result in README
+```
+
+You now have two folders. `git worktree list` shows both, each pinned
+to its branch.
+
+```bash
+$ git worktree list
+~/research/minwage-did  dcb18de [main]
+~/research/revision     dcb18de [revision]
+```
+
+The two directories are independent checkouts but one repository: a
+commit you make in either appears in the shared history immediately.
+
+```bash
+$ git -C ../revision branch --show-current
+revision
+$ git branch --show-current
+main
+```
+
+When the revision work is merged, remove the worktree. This deletes the
+extra directory but keeps all the commits, which are part of the shared
+history.
+
+```bash
+$ git worktree remove ../revision
+$ git worktree list
+~/research/minwage-did  dcb18de [main]
+```
+
+::: {.callout-tip .recovery title="RECOVERY"}
+A worktree is far safer than the alternatives it replaces. Compared to
+stashing (easy to forget, see Chapter 7) or keeping a second full clone
+(which drifts out of sync and needs its own pushes and pulls), a
+worktree shares one history, so there is nothing to reconcile. The
+other common use is running a long job: let a slow estimation run in one
+worktree on `main` while you keep editing on a feature branch in
+another, with no risk of changing the files underneath the running job.
 :::
 
-<!-- DRAFTING NOTES (remove on final)
-Running example: minimum-wage DiD project in ../sandbox.
-Tier each technical section with ::: {.tier-beginner} / {.tier-advanced}.
-Use PITFALL / RECOVERY / REPRODUCIBILITY callouts.
-Every command block: command + REAL output + one sentence why.
-Wrap code/terminal to ~64 chars. No em-dashes.
--->
+**When it is worth it.** Often. Worktrees are low-risk and solve a real
+daily annoyance. If you find yourself stashing constantly, or keeping a
+"clean copy" clone by hand, switch to worktrees.
+
+## Submodules: one repo pinned inside another {.tier-advanced}
+
+A **submodule** embeds one Git repository inside another at a pinned
+commit. The outer repository does not store the inner repository's
+files; it stores a reference (a "gitlink") to one exact commit of it.
+The motivating case is a piece of code or data you maintain separately
+and want to reuse across projects: a shared codebook, a cleaning
+library, a set of variable definitions.
+
+Here a shared codebook lives in its own repository, and we embed it in
+the running example.
+
+```bash
+$ git -c protocol.file.allow=always submodule add ../shared-codebook external/codebook
+Cloning into '~/research2/minwage-did/external/codebook'...
+done.
+```
+
+(The `protocol.file.allow` flag is only needed because this demo adds a
+submodule from a local path; with a normal GitHub URL you would not use
+it.) Git staged two things: a `.gitmodules` file recording where the
+submodule comes from, and the pinned pointer itself.
+
+```bash
+$ git status --short
+A  .gitmodules
+A  external/codebook
+$ cat .gitmodules
+[submodule "external/codebook"]
+	path = external/codebook
+	url = ../shared-codebook
+```
+
+The crucial detail is what the outer repository actually stores. After
+committing, the entry for the submodule is not a directory of files but
+a single commit reference, mode `160000`.
+
+```bash
+$ git submodule status
+ 43b0a6d53daf74a057481c5f9dbd2b26fa21c4e0 external/codebook (heads/main)
+$ git ls-tree HEAD -- external/codebook
+160000 commit 43b0a6d53daf74a057481c5f9dbd2b26fa21c4e0	external/codebook
+```
+
+That pin is the whole point and the whole problem. The point: your
+project records the *exact* version of the shared codebook it was built
+against, so the dependency is reproducible. The problem: that pin does
+not move on its own, and keeping it correct is manual work that trips up
+collaborators.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+Submodules have sharp edges that cause real data losses and confusion:
+
+- A fresh `git clone` of the outer repo leaves submodule directories
+  **empty**. Collaborators must clone with `--recurse-submodules` (or
+  run `git submodule update --init` afterwards), and many will not, then
+  report that "the code is missing."
+- Inside a submodule you are on a **detached HEAD** at the pinned
+  commit. Commits made there without first checking out a branch are
+  easy to lose (Chapter 17).
+- Updating the pin is two commits in two repositories: push the inner
+  repo first, then commit the moved pointer in the outer repo. Push them
+  out of order and your collaborators get a pin to a commit they cannot
+  fetch.
+
+None of this is a bug; it is the cost of the exact-version guarantee.
+:::
+
+**When it is worth it.** Rarely, for most researchers. Use a submodule
+only when you genuinely maintain a shared component in its own repo,
+need an exact-version pin across several projects, and control both
+sides. If you just want to *use* someone's library, install it as a
+normal dependency through your environment manager (Chapter 8): that is
+what `uv`, `renv`, and `conda` are for, and it is far less fragile. If
+you only need a snapshot of some shared files, copying them in (with a
+note on their origin and version) is often the honest, low-drama choice.
+
+## Sparse-checkout: only part of a repository on disk {.tier-advanced}
+
+**Sparse-checkout** puts only a chosen subset of a repository's files in
+your working directory, while the full history stays in the repository.
+It exists for large repositories where checking out everything is slow
+or wasteful. The running example is tiny, so this is a demonstration of
+mechanics, not a real need.
+
+```bash
+$ ls
+README.md
+output
+report.qmd
+scripts
+```
+
+Turn on cone-mode sparse-checkout (the modern, recommended form) and
+restrict the working tree to the `scripts` directory.
+
+```bash
+$ git sparse-checkout init --cone
+$ git sparse-checkout set scripts
+$ ls
+README.md
+report.qmd
+scripts
+```
+
+Cone mode keeps the top-level files and the directories you name, and
+removes the others (`output/` is gone from disk). Nothing was deleted
+from the repository, though: Git still tracks every file in `output/`.
+
+```bash
+$ git sparse-checkout list
+scripts
+$ git ls-files output/
+output/tables/did_main.txt
+```
+
+Restoring the full working tree is one command.
+
+```bash
+$ git sparse-checkout disable
+$ ls
+README.md
+output
+report.qmd
+scripts
+```
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+Sparse-checkout changes only which files are *on your disk*, never which
+files are *in the repository* or its history. A collaborator who clones
+normally still gets everything. This makes it safe for reproducibility:
+it is a local convenience, not an edit to the project. The related tool
+for an oversized *history* (as opposed to an oversized working tree) is
+a partial or shallow clone, for example `git clone --filter=blob:none`,
+which defers downloading old file contents until needed.
+:::
+
+**When it is worth it.** Almost never for a single paper, whose repo is
+small by construction (data and outputs are git-ignored, per Chapters 6
+and 8). It earns its place in a large shared monorepo, or a repository
+that unavoidably contains many big tracked files, where you only work in
+one corner. If your research repository is large enough to need
+sparse-checkout, that is usually a sign something belongs outside Git
+(Chapter 8), not a sign you need this tool.
+
+## Choosing among them
+
+| Tool | Use it when | Prefer instead |
+|---|---|---|
+| Worktree | You need two branches open at once, or a clean copy without stashing | A second worktree beats a second clone or a deep stash stack |
+| Submodule | You maintain a shared component in its own repo and need an exact-version pin across projects | A package via `uv`/`renv`/`conda`, or a copied-in snapshot with a recorded version |
+| Sparse-checkout | A repo is too large to check out in full and you work in one part | Keeping the repo small in the first place; a partial clone for huge history |
+
+The pattern across the row is the same: the simpler alternative is
+right far more often than the advanced tool, and the advanced tool is
+right when its one specific guarantee (a second branch in place, an
+exact pin, a partial working tree) is exactly what you need.
+
+## What you can now do
+
+You can open two branches at once with a worktree, embed and pin a
+shared repository with a submodule (and you know why you usually should
+not), and trim a working tree to a subset with cone-mode
+sparse-checkout. More importantly, you can tell when none of them is the
+right tool, which for everyday single-paper research is most of the
+time.
 
 ## Try it yourself {.unnumbered}
 
-_Exercise tied to the running example will go here._
+Work in a throwaway clone of the running example.
+
+1. Add a worktree on a new `revision` branch with `git worktree add
+   ../revision -b revision`. Make a commit in each directory, then run
+   `git log` in both and confirm the histories share a base but diverge.
+   Remove the worktree and confirm the commits survive.
+2. Create a tiny second repository (one CSV, one commit) and add it to
+   your clone as a submodule under `external/`. Inspect `.gitmodules`
+   and `git submodule status`. Then clone your outer repo *without*
+   `--recurse-submodules` and observe the empty submodule directory:
+   this is the failure your collaborators will hit.
+3. Turn on cone-mode sparse-checkout and reduce the working tree to
+   `scripts/`. Confirm with `git ls-files` that `output/` is still
+   tracked even though it is no longer on disk. Re-enable the full tree
+   with `git sparse-checkout disable`.
+4. For each of the three, write one sentence on whether your current
+   project would actually benefit from it. For most readers, the honest
+   answer for at least two of the three will be "no," and recognizing
+   that is the skill this chapter is teaching.

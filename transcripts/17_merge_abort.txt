@@ -1,0 +1,11 @@
+# Symptom: a merge hit conflicts and you would rather not deal
+# with it right now. Back out completely.
+$ git merge --no-edit other
+Auto-merging README.md
+CONFLICT (content): Merge conflict in README.md
+Automatic merge failed; fix conflicts and then commit the result.
+$ git merge --abort
+$ git status --short
+$ git log --oneline -1
+b10c4a1 Edit headline (main)
+# The tree is exactly as it was before the merge attempt.

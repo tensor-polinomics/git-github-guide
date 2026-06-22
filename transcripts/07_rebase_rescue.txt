@@ -1,0 +1,36 @@
+# Three new commits on the feature branch, each a different file:
+$ git log --oneline -4
+b511397 Tidy README whitespace
+5d44844 Record clustering decision (KEEP THIS)
+93e80ec Add placebo-test TODO
+dcb18de Note headline result in README
+
+# An interactive rebase to tidy up. The middle commit's line
+# is deleted in the editor by accident, so the commit is dropped.
+$ git rebase -i HEAD~3
+Rebasing (2/2)                                                                                Successfully rebased and updated refs/heads/cleanup-history.
+
+# The rebase 'succeeded', but the KEEP THIS commit is gone:
+$ git log --oneline -4
+ea2e32a Tidy README whitespace
+93e80ec Add placebo-test TODO
+dcb18de Note headline result in README
+f9a193f Add DiD analysis, report, and main table
+
+# The reflog still holds the pre-rebase tip.
+$ git reflog -6
+ea2e32a HEAD@{0}: rebase (finish): returning to refs/heads/cleanup-history
+ea2e32a HEAD@{1}: rebase (pick): Tidy README whitespace
+93e80ec HEAD@{2}: rebase (start): checkout HEAD~3
+b511397 HEAD@{3}: commit: Tidy README whitespace
+5d44844 HEAD@{4}: commit: Record clustering decision (KEEP THIS)
+93e80ec HEAD@{5}: commit: Add placebo-test TODO
+
+# Recover: reset the branch to where it was before the rebase.
+$ git reset --hard ORIG_HEAD
+HEAD is now at b511397 Tidy README whitespace
+$ git log --oneline -4
+b511397 Tidy README whitespace
+5d44844 Record clustering decision (KEEP THIS)
+93e80ec Add placebo-test TODO
+dcb18de Note headline result in README

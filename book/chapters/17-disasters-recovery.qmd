@@ -1,17 +1,285 @@
 # Common Disasters and Recovery
 
-::: {.callout-note appearance="minimal"}
-**Chapter status:** stub. Scope: A one-page panic reference: huge file committed, leaked key, detached HEAD, lost rebase, bad merge.
+This is the chapter to open when something has just gone wrong. It is a
+panic reference: find your symptom, run the fix, and read the
+explanation later. Every command block was run for real against a
+throwaway clone of the running example; the output is real, lightly
+normalized only where a carriage-return progress bar would otherwise
+smear across the page. Your hashes will differ.
+
+::: {.callout-tip .recovery title="RECOVERY"}
+Before you touch anything, three rules that prevent most disasters from
+becoming permanent:
+
+1. **Do not force-push, and do not delete the repository.** Almost
+   everything local is recoverable; a panicked `push --force` over good
+   work on the remote often is not.
+2. **`git reflog` is your undo history.** Git records every position
+   `HEAD` has held. Reachable entries are kept 90 days by default;
+   commits orphaned by a reset or rebase are unreachable and expire in
+   30 (`gc.reflogExpireUnreachable`). That is still weeks, so lost
+   commits are usually still there, but recover sooner rather than later.
+3. **The dividing line is whether you have pushed.** If a bad commit is
+   still only on your machine, you may safely rewrite it (`reset`,
+   `--amend`, `rebase`). Once it is pushed and shared, undo it with a
+   *new* commit (`revert`) instead of rewriting shared history.
 :::
 
-<!-- DRAFTING NOTES (remove on final)
-Running example: minimum-wage DiD project in ../sandbox.
-Tier each technical section with ::: {.tier-beginner} / {.tier-advanced}.
-Use PITFALL / RECOVERY / REPRODUCIBILITY callouts.
-Every command block: command + REAL output + one sentence why.
-Wrap code/terminal to ~64 chars. No em-dashes.
--->
+## Symptom-to-fix table
+
+| Symptom | Fix | Section |
+|---|---|---|
+| Edited a file, want the committed version back | `git restore <file>` | [1](#sec-restore) |
+| Staged something by mistake | `git restore --staged <file>` | [2](#sec-unstage) |
+| Committed on the wrong branch (not pushed) | `git branch X` then `git reset --hard HEAD~1` | [3](#sec-wrongbranch) |
+| Last commit included a file it should not (not pushed) | `git rm --cached` then `git commit --amend` | [4](#sec-amend) |
+| Need to undo a commit that is already pushed | `git revert <hash>` | [5](#sec-revert) |
+| Lost commits to a reset or bad rebase | `git reflog` then `git reset --hard` | [6](#sec-reflog) |
+| Made commits on a detached HEAD | `git switch -c <name>` | [7](#sec-detached) |
+| A merge is going wrong | `git merge --abort` | [8](#sec-mergeabort) |
+| A secret is buried in history | rotate it, then `git filter-repo` | [9](#sec-secret) |
+
+## 1. Restore a file to its committed version {#sec-restore}
+
+You edited a file, the edit is wrong, and you want the last committed
+version back. `git restore` overwrites the working copy from the repo.
+
+```bash
+$ git status --short
+ M README.md
+$ git restore README.md
+$ git status --short
+```
+
+The clean `git status` confirms the file is back to its committed state.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+`git restore <file>` permanently discards uncommitted changes to that
+file; they were never committed, so the reflog cannot bring them back.
+This is the one common operation that is genuinely irreversible. Be sure
+you want the edit gone before you run it.
+:::
+
+## 2. Unstage a file you added by mistake {#sec-unstage}
+
+You ran `git add` (often the reflexive `git add .`) and pulled in
+something that should not be staged. `git restore --staged` removes it
+from the staging area while leaving the file on disk untouched.
+
+```bash
+$ git add .
+$ git status --short
+A  data_dump.csv
+$ git restore --staged data_dump.csv
+$ git status --short
+?? data_dump.csv
+```
+
+The file went from staged (`A`) back to untracked (`??`): unstaged, but
+not deleted.
+
+## 3. Move a commit off the wrong branch {#sec-wrongbranch}
+
+You committed on `main` but the work belonged on a feature branch, and
+you have not pushed. Create a branch at the current commit (which keeps
+it), then rewind `main` by one.
+
+```bash
+$ git log --oneline -2
+51ea46e Try an experimental specification
+dcb18de Note headline result in README
+$ git branch experiment
+$ git reset --hard HEAD~1
+HEAD is now at dcb18de Note headline result in README
+$ git log --oneline -2 experiment
+51ea46e Try an experimental specification
+dcb18de Note headline result in README
+```
+
+`main` is back where it should be, and the commit now lives on
+`experiment`, ready to keep building on.
+
+## 4. Drop a file from your last commit {#sec-amend}
+
+Your most recent commit included a large data file (or any wrong file)
+and you have not pushed. Untrack the file, ignore it, and amend the
+*same* commit so the mistake never appears in history.
+
+```bash
+$ git show --stat --oneline HEAD | head -5
+6f53f11 Add cleaning tweak (oops, also staged the raw CSV)
+ data/raw_panel.csv  | Bin 0 -> 2000000 bytes
+ scripts/01_clean.py |   2 ++
+ 2 files changed, 2 insertions(+)
+$ git rm --cached data/raw_panel.csv
+rm 'data/raw_panel.csv'
+$ echo 'data/' >> .gitignore
+$ git add .gitignore
+$ git commit --amend --no-edit -q
+$ git show --stat --oneline HEAD | head -5
+da219e5 Add cleaning tweak (oops, also staged the raw CSV)
+ .gitignore          | 1 +
+ scripts/01_clean.py | 2 ++
+ 2 files changed, 3 insertions(+)
+```
+
+The amended commit (`da219e5`) keeps the real change and the new ignore
+rule, and the data file is gone from it.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+`--amend` rewrites the last commit into a new one, so use it only if you
+have **not pushed**. If the big file was committed several commits back,
+or already pushed, `--amend` is not enough: that is the deeper rewrite
+in Section 9. And if the file was a secret, ignoring it is never enough
+on its own (Chapter 6): rotate it.
+:::
+
+## 5. Undo a commit that is already pushed {#sec-revert}
+
+A bad commit is already on the shared remote. Do not rewrite history:
+that breaks every collaborator's clone (Chapter 7). Instead, `git
+revert` adds a new commit that is the exact inverse of the bad one.
+
+```bash
+$ git log --oneline -2
+f835586 Record headline effect (WRONG)
+dcb18de Note headline result in README
+$ git revert --no-edit HEAD
+[main d965d52] Revert "Record headline effect (WRONG)"
+ Date: Thu Feb 12 09:31:00 2026 +0000
+ 1 file changed, 2 deletions(-)
+$ git log --oneline -3
+d965d52 Revert "Record headline effect (WRONG)"
+f835586 Record headline effect (WRONG)
+dcb18de Note headline result in README
+```
+
+The error is undone by a forward commit (`d965d52`); the original commit
+stays in history, so nothing your collaborators have is invalidated.
+
+## 6. Recover commits lost to a reset or bad rebase {#sec-reflog}
+
+A careless `git reset --hard` (or a botched rebase, Chapter 7) appears
+to have destroyed commits. It did not. The reflog still holds them.
+
+```bash
+$ git reset --hard HEAD~2
+HEAD is now at dcb18de Note headline result in README
+$ git reflog -4
+dcb18de HEAD@{0}: reset: moving to HEAD~2
+2392ecf HEAD@{1}: commit: Add analysis B
+67e52cc HEAD@{2}: commit: Add analysis A
+dcb18de HEAD@{3}: checkout: moving from dcb18de... to main
+$ git reset --hard HEAD@{1}
+HEAD is now at 2392ecf Add analysis B
+```
+
+`HEAD@{1}` was the tip before the reset; resetting to it restores both
+lost commits at once. (For a rebase specifically, `git reset --hard
+ORIG_HEAD` does the same without reading the reflog.)
+
+## 7. Rescue commits made on a detached HEAD {#sec-detached}
+
+You checked out an old commit to look around, then committed. Those
+commits belong to no branch and would be garbage-collected eventually.
+Naming a branch where you are makes them permanent.
+
+```bash
+$ git switch --detach HEAD~1
+HEAD is now at f9a193f Add DiD analysis, report, and main table
+$ git switch -c saved-experiment
+Switched to a new branch 'saved-experiment'
+$ git log --oneline -2
+47cc466 Experiment from an old commit
+f9a193f Add DiD analysis, report, and main table
+```
+
+The experiment now lives on `saved-experiment`; it can no longer be lost
+to garbage collection.
+
+## 8. Back out of a merge in progress {#sec-mergeabort}
+
+A merge hit conflicts and you would rather not resolve them now (wrong
+branch, bad timing). `git merge --abort` returns the tree to exactly its
+pre-merge state.
+
+```bash
+$ git merge --no-edit other
+Auto-merging README.md
+CONFLICT (content): Merge conflict in README.md
+Automatic merge failed; fix conflicts and then commit the result.
+$ git merge --abort
+$ git status --short
+$ git log --oneline -1
+b10c4a1 Edit headline (main)
+```
+
+The clean `git status` and unchanged tip show the merge attempt left no
+trace. (If a bad merge already *completed*, `git reset --hard
+ORIG_HEAD` undoes it the same way, as long as you have not pushed.)
+
+## 9. Purge a secret buried in history {#sec-secret}
+
+A credentials file was committed and is now several commits deep. This
+is the one case where you must rewrite history even though it is
+painful, and the order of operations matters.
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+**Step 0, before any Git command: rotate the secret.** Revoke the key or
+change the password at its source. Once it is revoked, a copy left in
+some old clone is harmless. Rewriting history removes the embarrassment;
+rotating the key removes the danger. Chapter 6 covers why, and why
+GitHub support cannot scrub it from every fork and cache for you.
+:::
+
+The secret is retrievable from history until you remove it, then
+`git-filter-repo` purges it from every commit.
+
+```bash
+$ git log --oneline -- config/secrets.yaml
+56f4637 Wire up vendor credentials
+$ git show HEAD~1:config/secrets.yaml
+vendor_api_key: "DEMO_KEY_NOT_A_SECRET"
+$ git filter-repo --invert-paths \
+      --path config/secrets.yaml --force
+Parsed 6 commits
+HEAD is now at 6f033d5 Continue analysis
+New history written in 0.01 seconds; now repacking/cleaning...
+Repacking your repo and cleaning out old unneeded objects
+Completely finished after 0.02 seconds.
+$ git log --oneline -- config/secrets.yaml
+```
+
+The final empty `git log` confirms the file exists in no commit. After
+this you must force-push and have collaborators re-clone, and the secret
+must already have been rotated (Step 0).
+
+## The golden rules, restated
+
+When the panic passes, these are the habits that turn most disasters
+into minor detours: commit small and often so any lost work is small;
+run `git reflog` before doing anything drastic, because it almost always
+has your answer; never rewrite history you have already pushed, reaching
+for `revert` instead of `reset` once work is shared; and treat a leaked
+secret as a rotation problem first and a Git problem second. Prevention,
+covered throughout this book, beats every recovery in this chapter.
 
 ## Try it yourself {.unnumbered}
 
-_Exercise tied to the running example will go here._
+Deliberately cause and fix each disaster in a throwaway clone, so the
+recovery is muscle memory before you need it for real.
+
+1. Make and discard an unstaged edit with `git restore`. Then stage a
+   file and unstage it with `git restore --staged`. Note which one is
+   reversible and which is not.
+2. Commit something on `main`, then move it to a new branch with `git
+   branch` plus `git reset --hard HEAD~1`. Confirm both branches with
+   `git log`.
+3. Commit a large dummy file by accident, then remove it from that
+   commit with `git rm --cached` and `git commit --amend`.
+4. Make two commits, `git reset --hard HEAD~2` to "lose" them, and
+   recover them from `git reflog`. This is the single most valuable
+   drill in the chapter.
+5. Optional, and only in a throwaway repo: commit a fake secrets file,
+   then purge it with `git filter-repo --invert-paths`. Write down, in
+   order, what you would do first if the key were real.

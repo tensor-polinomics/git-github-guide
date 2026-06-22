@@ -1,0 +1,16 @@
+# Symptom: a credentials file was committed and is now buried.
+# STEP 0 (not a git command): rotate/revoke the key FIRST (Ch.6).
+$ git log --oneline -- config/secrets.yaml
+56f4637 Wire up vendor credentials
+# It is retrievable from history until purged:
+$ git show HEAD~1:config/secrets.yaml
+vendor_api_key: "DEMO_KEY_NOT_A_SECRET"
+# Purge the file from ALL history with git-filter-repo.
+$ git filter-repo --invert-paths --path config/secrets.yaml --force
+Parsed 6 commitsHEAD is now at 6f033d5 Continue analysis
+
+New history written in 0.01 seconds; now repacking/cleaning...
+Repacking your repo and cleaning out old unneeded objects
+Completely finished after 0.02 seconds.
+# Now it exists in no commit (empty output below):
+$ git log --oneline -- config/secrets.yaml

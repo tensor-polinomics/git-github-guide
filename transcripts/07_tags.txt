@@ -1,0 +1,19 @@
+# Mark the exact commit behind a submitted draft with an
+# annotated tag, so you can always return to that version.
+$ git tag -a v1.0-wp -m 'Working paper submission, Feb 2026'
+$ git tag
+baseline-4commits
+v1.0-wp
+# An annotated tag stores its own message, tagger, and date:
+$ git show --no-patch v1.0-wp
+tag v1.0-wp
+Tagger: Pat Lee <pat@example.edu>
+Date:   Fri Feb 6 08:30:00 2026 +0000
+
+Working paper submission, Feb 2026
+
+commit dcb18de650c577b036ffc179a1b4c6544a2c838b
+Author: Pat Researcher <pat@example.edu>
+Date:   Thu Jun 4 11:00:00 2026 +0000
+
+    Note headline result in README

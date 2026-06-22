@@ -1,0 +1,15 @@
+# The hotfix branch has a ready typo fix AND unfinished WIP.
+$ git log --oneline -3
+cea9aa3 WIP bootstrap SEs (not ready)
+c525fb3 Fix typo in README
+dcb18de Note headline result in README
+
+# Bring ONLY the typo fix (c525fb3) onto main, not the WIP commit.
+$ git cherry-pick c525fb3
+[main 388cff5] Fix typo in README
+ Date: Fri Feb 6 08:01:00 2026 +0000
+ 1 file changed, 2 insertions(+)
+$ git log --oneline -3
+388cff5 Fix typo in README
+dcb18de Note headline result in README
+f9a193f Add DiD analysis, report, and main table

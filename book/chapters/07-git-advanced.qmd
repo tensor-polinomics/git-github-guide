@@ -1,17 +1,484 @@
 # Git for Advanced Users
 
-::: {.callout-note appearance="minimal"}
-**Chapter status:** stub. Scope: Branching, merging, rebase vs merge, stash, reflog, bisect, cherry-pick, tags.
+Chapter 5 covered the daily loop on a single line of history: edit,
+stage, commit, undo. That is most of the Git you need. This chapter
+adds the tools for when one line is not enough: branches to develop a
+robustness check without disturbing the main analysis, merging and
+rebasing to bring that work back, and a set of power tools (stash,
+bisect, cherry-pick, tags) that each solve one specific research
+problem. The mental model from Chapter 3 still holds throughout: a
+commit is a snapshot, and a branch is just a movable pointer at one of
+those snapshots.
+
+Every command block below was run against a throwaway clone of the
+running example's `baseline-4commits` tag. The output is real, lightly
+normalized only where it would otherwise mislead on the page:
+carriage-return progress bars are collapsed to their final line, and
+machine-specific paths are abbreviated. Your hashes will differ; the
+behaviour will not.
+
+## Branches and merging {.tier-beginner}
+
+A branch lets you build something uncertain without risking the
+version that works. You start a branch, commit freely on it, and the
+`main` line stays exactly where it was. Creating and switching to one
+is a single command.
+
+```bash
+$ git switch -c robust-se
+Switched to a new branch 'robust-se'
+```
+
+Suppose on `robust-se` you add a note about clustering standard errors
+to `report.qmd` and commit it. Meanwhile, back on `main`, you make an
+unrelated edit (a cross-reference in the README) and commit that. The
+two branches have now *diverged*: each has a commit the other does
+not. Bringing them together is a merge.
+
+```bash
+$ git switch main
+Switched to branch 'main'
+$ git merge --no-edit robust-se
+Merge made by the 'ort' strategy.
+ report.qmd | 2 ++
+ 1 file changed, 2 insertions(+)
+```
+
+Because the two branches changed different files, Git combined them
+with no conflict and recorded a **merge commit**, a commit with two
+parents that ties the histories back together.
+
+```bash
+$ git log --oneline --graph -5
+*   3f60bca Merge branch 'robust-se'
+|\
+| * d938421 Note clustered-SE robustness check in report
+* | 05c4464 Cross-reference the report from the README
+|/
+* dcb18de Note headline result in README
+* f9a193f Add DiD analysis, report, and main table
+```
+
+The graph shows the split and the rejoin: the two parallel commits,
+and the merge commit `3f60bca` above them. This is the honest record
+of how the work actually happened.
+
+::: {.callout-tip .recovery title="RECOVERY"}
+If you start a merge and decide you do not want it (wrong branch,
+unexpected scope), `git merge --abort` returns you to the exact state
+before you ran `git merge`. Nothing is committed until the merge
+completes, so backing out is always safe.
 :::
 
-<!-- DRAFTING NOTES (remove on final)
-Running example: minimum-wage DiD project in ../sandbox.
-Tier each technical section with ::: {.tier-beginner} / {.tier-advanced}.
-Use PITFALL / RECOVERY / REPRODUCIBILITY callouts.
-Every command block: command + REAL output + one sentence why.
-Wrap code/terminal to ~64 chars. No em-dashes.
--->
+## When a merge conflicts {.tier-beginner}
+
+Git merges different files automatically. It cannot merge two
+*different edits to the same line*, because it has no way to know which
+one you meant. That is a conflict, and in collaborative research it is
+routine, not a crisis. Here a coauthor reworded the headline result on
+one branch while you added a standard error to the same line on `main`.
+
+```bash
+$ git merge --no-edit coauthor-wording
+Auto-merging README.md
+CONFLICT (content): Merge conflict in README.md
+Automatic merge failed; fix conflicts and then commit the result.
+```
+
+Git stops and tells you exactly where it is stuck. `git status`
+confirms the state and, usefully, lists your options.
+
+```bash
+$ git status
+On branch main
+You have unmerged paths.
+  (fix conflicts and run "git commit")
+  (use "git merge --abort" to abort the merge)
+
+Unmerged paths:
+  (use "git add <file>..." to mark resolution)
+	both modified:   README.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+```
+
+Open the file and Git has marked the clash with conflict markers:
+your version between `<<<<<<<` and `=======`, the incoming version
+between `=======` and `>>>>>>>`.
+
+```bash
+$ sed -n '36,46p' README.md
+## Headline result
+
+<<<<<<< HEAD
+The DiD estimate is a 1.9 pp drop in treated counties (SE 0.4 pp).
+=======
+Treated counties saw teen employment fall by about 1.9 percentage points.
+>>>>>>> coauthor-wording
+```
+
+You resolve a conflict by editing the file into the single version you
+want and deleting all three marker lines. Then you stage the resolved
+file and commit, which completes the merge.
+
+```bash
+$ git add README.md
+$ git commit --no-edit -q
+$ git log --oneline --graph -4
+*   067058c Merge branch 'coauthor-wording'
+|\
+| * 362b852 Reword headline result (coauthor)
+* | 40a7427 Add SE to headline result
+|/
+* dcb18de Note headline result in README
+```
+
+::: {.callout-warning .pitfall title="PITFALL"}
+A conflict is resolved by *what you leave in the file*, not by which
+side you pick. It is entirely possible to delete the markers and still
+leave a broken sentence, a duplicated line, or both edits stitched
+together wrong. After resolving, re-read the actual text and, for code,
+re-run it. Git checks that the markers are gone; it cannot check that
+the result is correct.
+:::
+
+## Rebase: a tidier alternative to merge {.tier-advanced}
+
+A merge preserves the true, branching shape of history. Sometimes you
+would rather pretend the branching never happened and present a clean,
+linear story instead. That is what `git rebase` does: it lifts the
+commits from your branch and *replays* them, one by one, on top of the
+latest `main`, as if you had started your work from there.
+
+```bash
+$ git rebase main
+Successfully rebased and updated refs/heads/add-event-study.
+```
+
+```bash
+$ git log --oneline --graph -5
+* 982d3de Sketch event-study figure in report
+* cda9799 Document the employment-rate definition
+* dcb18de Note headline result in README
+* f9a193f Add DiD analysis, report, and main table
+* 758175e Add polars cleaning script
+```
+
+There is no merge commit and no fork in the graph: just a straight
+line. Note that the rebased commit got a *new hash* (`982d3de`). Rebase
+does not move commits, it rewrites them, because each commit's identity
+depends on its parent and the parent changed.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+The golden rule of rebasing: **never rebase commits you have already
+pushed and shared.** Because rebase rewrites commits into new ones,
+anyone who already has the old commits will find their history in
+conflict with yours, and merging the two back together duplicates every
+commit. Rebase your own local, unpushed work to tidy it before sharing;
+once it is public, prefer merge. (Chapter 12 returns to this in the
+context of pull requests.)
+:::
+
+## When a rebase goes wrong {.tier-advanced}
+
+Rebasing is the most common way researchers scare themselves, usually
+during an *interactive* rebase (`git rebase -i`) meant to tidy a messy
+branch. Here a branch has three commits, and the middle one records a
+real decision worth keeping.
+
+```bash
+$ git log --oneline -4
+b511397 Tidy README whitespace
+5d44844 Record clustering decision (KEEP THIS)
+93e80ec Add placebo-test TODO
+dcb18de Note headline result in README
+```
+
+An interactive rebase opens an editor listing those commits, one per
+line, for you to reorder, squash, or drop. If you accidentally delete
+the wrong line, the corresponding commit is dropped silently and the
+rebase reports plain success.
+
+```bash
+$ git rebase -i HEAD~3
+Successfully rebased and updated refs/heads/cleanup-history.
+
+$ git log --oneline -4
+ea2e32a Tidy README whitespace
+93e80ec Add placebo-test TODO
+dcb18de Note headline result in README
+f9a193f Add DiD analysis, report, and main table
+```
+
+The "KEEP THIS" commit is gone from the branch, with no warning. This
+is exactly the moment people panic. They should not, because Git wrote
+down where the branch was before the rebase. The **reflog** is Git's
+private log of every position `HEAD` has held.
+
+```bash
+$ git reflog -6
+ea2e32a HEAD@{0}: rebase (finish): returning to refs/heads/cleanup-history
+ea2e32a HEAD@{1}: rebase (pick): Tidy README whitespace
+93e80ec HEAD@{2}: rebase (start): checkout HEAD~3
+b511397 HEAD@{3}: commit: Tidy README whitespace
+5d44844 HEAD@{4}: commit: Record clustering decision (KEEP THIS)
+93e80ec HEAD@{5}: commit: Add placebo-test TODO
+```
+
+`HEAD@{3}` (`b511397`) is the branch tip from just before the rebase
+started. Git also saves that tip under the name `ORIG_HEAD`, so you can
+reset to it without copying a hash by hand.
+
+```bash
+$ git reset --hard ORIG_HEAD
+HEAD is now at b511397 Tidy README whitespace
+$ git log --oneline -4
+b511397 Tidy README whitespace
+5d44844 Record clustering decision (KEEP THIS)
+93e80ec Add placebo-test TODO
+dcb18de Note headline result in README
+```
+
+All three commits are back, including the one that was dropped.
+
+::: {.callout-tip .recovery title="RECOVERY"}
+After any rebase, reset, or merge you regret, `git reset --hard
+ORIG_HEAD` returns to the state from immediately before it. For older
+mistakes, run `git reflog`, find the `HEAD@{n}` you want, and reset to
+that hash (or, more cautiously, `git switch -c rescue <hash>` to inspect
+it on a new branch first). Reflog entries that are still reachable are
+kept 90 days by default, but commits orphaned by a reset or rebase
+become *unreachable* and expire in 30 (`gc.reflogExpireUnreachable`).
+That is still weeks, not seconds, but recover sooner rather than later.
+:::
+
+## Stash: park work without committing {.tier-beginner}
+
+Sometimes you are halfway through a messy experiment when something
+urgent needs a clean working tree: a colleague's bug to reproduce, a
+quick number for a meeting. You do not want to commit half-finished
+work just to get it out of the way. `git stash` sets your uncommitted
+changes aside and restores a clean tree.
+
+```bash
+$ git status --short
+ M scripts/02_analysis.py
+$ git stash
+Saved working directory and index state WIP on main: dcb18de Note headline result in README
+$ git status --short
+$ git stash list
+stash@{0}: WIP on main: dcb18de Note headline result in README
+```
+
+The working tree is clean and the change is safely held in the stash.
+Do the urgent task, then bring the experiment back with `git stash
+pop`, which reapplies the changes and removes them from the stash.
+
+```bash
+$ git stash pop
+On branch main
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   scripts/02_analysis.py
+
+no changes added to commit (use "git add" and/or "git commit -a")
+Dropped refs/stash@{0} (7c426ba52bbb8e58b3bd61ea4f8d9c47ca01d2eb)
+```
+
+::: {.callout-warning .pitfall title="PITFALL"}
+The stash is a convenience, not storage. It is local, easy to forget,
+and a long stack of `stash@{3}`, `stash@{4}`, and so on is a sign that
+work should have been a branch instead. Use it for
+minutes-to-hours interruptions; for anything you might still want next
+week, commit it on a branch.
+:::
+
+## Bisect: find the commit that broke a result {.tier-advanced}
+
+This is the power tool researchers underuse the most. A number that was
+right last month is now wrong, and somewhere in dozens of commits a
+change broke it. `git bisect` finds the culprit by binary search:
+you mark one known-good and one known-bad commit, and Git checks out
+the midpoint repeatedly, halving the suspect range each time.
+
+It is at its best with a script that returns success or failure. Here a
+tiny smoke test exits 0 if the headline DiD coefficient is negative
+(as it must be) and 1 if it is not. The bug: somewhere the sign of the
+effect flipped.
+
+```bash
+$ git log --oneline -6
+b0491dc Record county count
+069243a Add notes pointer
+8784fdd Refactor effect constants
+151b299 Stub event-study coefficients
+5fda8a3 Record policy month
+067c7d0 Add effect module and a sign smoke test
+```
+
+Mark the bad and good ends, then hand the test to `git bisect run` and
+let it converge on its own.
+
+```bash
+$ git bisect start
+$ git bisect bad HEAD
+$ git bisect good 067c7d0
+Bisecting: 2 revisions left to test after this (roughly 1 step)
+[151b2990159b57e956e4c632a23a7efee8f80824] Stub event-study coefficients
+$ git bisect run python3 analysis/smoke_test.py
+running  'python3' 'analysis/smoke_test.py'
+OK: effect -0.0189 is negative
+Bisecting: 0 revisions left to test after this (roughly 1 step)
+[069243ae15525213ab2c561ce2118878e2c98fb5] Add notes pointer
+running  'python3' 'analysis/smoke_test.py'
+FAIL: effect 0.0189 is not negative
+Bisecting: 0 revisions left to test after this (roughly 0 steps)
+[8784fdd6bcc1320889674ea495f69ce91d8c54a8] Refactor effect constants
+running  'python3' 'analysis/smoke_test.py'
+FAIL: effect 0.0189 is not negative
+8784fdd6bcc1320889674ea495f69ce91d8c54a8 is the first bad commit
+commit 8784fdd6bcc1320889674ea495f69ce91d8c54a8
+Author: Pat Lee <pat@example.edu>
+Date:   Sat Feb 7 09:04:00 2026 +0000
+
+    Refactor effect constants
+
+ analysis/effect.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+bisect found first bad commit
+```
+
+Git names the exact commit that introduced the bug, `8784fdd`, after
+testing only three. Always end with `git bisect reset` to return to
+where you started.
+
+```bash
+$ git bisect reset
+Previous HEAD position was 8784fdd Refactor effect constants
+Switched to branch 'main'
+```
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+Bisect only works if each old commit can actually be rebuilt and
+tested. This is the payoff of the habits in this book: a seeded data
+generator (Chapter 8), a pipeline that runs from code, and small
+frequent commits mean any past commit is a working checkpoint a script
+can interrogate. A repo of giant manual commits with un-rebuildable
+data cannot be bisected. Reproducibility is not only for other people;
+it is what lets *you* debug your own history.
+:::
+
+## Cherry-pick: take one commit, not the branch {.tier-advanced}
+
+Occasionally you want a single commit from another branch without
+merging everything on it. A `hotfix` branch has a finished typo fix and
+an unfinished experiment sitting on top of it.
+
+```bash
+$ git log --oneline -3
+cea9aa3 WIP bootstrap SEs (not ready)
+c525fb3 Fix typo in README
+dcb18de Note headline result in README
+```
+
+You want the typo fix on `main` now, but not the work in progress.
+`git cherry-pick` copies just that one commit across.
+
+```bash
+$ git cherry-pick c525fb3
+[main 388cff5] Fix typo in README
+ Date: Fri Feb 6 08:01:00 2026 +0000
+ 1 file changed, 2 insertions(+)
+$ git log --oneline -3
+388cff5 Fix typo in README
+dcb18de Note headline result in README
+f9a193f Add DiD analysis, report, and main table
+```
+
+The fix is now on `main` as commit `388cff5`, a *new* hash: like
+rebase, cherry-pick rewrites the commit onto a new parent rather than
+moving it.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+Because the cherry-picked commit is a copy, the same change now exists
+under two different hashes on two branches. If you later merge those
+branches, Git is usually smart enough to notice, but cherry-picking
+heavily and then merging can resurrect changes or cause confusing
+conflicts. Reach for cherry-pick for the occasional targeted fix, not
+as a routine way to move work around.
+:::
+
+## Tags: name a version you can return to {.tier-beginner}
+
+A commit hash like `dcb18de` is precise but meaningless to a human. A
+**tag** attaches a permanent, readable name to a specific commit. The
+kind you want is an *annotated* tag, which stores its own message,
+author, and date.
+
+```bash
+$ git tag -a v1.0-wp -m 'Working paper submission, Feb 2026'
+$ git tag
+baseline-4commits
+v1.0-wp
+$ git show --no-patch v1.0-wp
+tag v1.0-wp
+Tagger: Pat Lee <pat@example.edu>
+Date:   Fri Feb 6 08:30:00 2026 +0000
+
+Working paper submission, Feb 2026
+
+commit dcb18de650c577b036ffc179a1b4c6544a2c838b
+Author: Pat Researcher <pat@example.edu>
+Date:   Thu Jun 4 11:00:00 2026 +0000
+
+    Note headline result in README
+```
+
+The tag `v1.0-wp` now permanently marks the exact code behind that
+submission. Unlike a branch, a tag does not move as you keep working,
+which is exactly why it is the right tool for "this is what the
+referees saw."
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+Tags are the backbone of a citable replication package. When you submit
+a paper, tag the commit; when you post the package to a repository that
+mints a DOI (Chapter 15), you push the tag so the archived version and
+the Git history point at the same snapshot. "Results in Table 3 use
+release `v1.0-wp`" is reproducible in a way that "the latest code" never
+is.
+:::
+
+## What you can now do
+
+You can run parallel lines of work with branches and bring them back
+with `merge`, resolve the conflicts that arise when two edits collide,
+and choose between a truthful merge history and a tidy rebased one,
+knowing the golden rule that keeps rebase safe. You can park work with
+`stash`, hunt a regression to its exact commit with `bisect`, lift a
+single commit with `cherry-pick`, and name a version with an annotated
+`tag`. And underneath all of it, the reflog means almost nothing you do
+locally is truly unrecoverable. Chapter 9 takes this history online.
 
 ## Try it yourself {.unnumbered}
 
-_Exercise tied to the running example will go here._
+Work in a throwaway clone of the running example so you cannot harm real
+history (`git clone <bundle> practice && cd practice`).
+
+1. Create a branch `robustness`, add a commit that appends a robustness
+   note to `report.qmd`, switch back to `main`, add a different commit,
+   then `git merge` the branch. Confirm with `git log --oneline --graph`
+   that you got a merge commit with two parents.
+2. Force a conflict on purpose: edit the same README line on two
+   branches and merge them. Resolve it, then re-read the resulting line
+   to check it is a real sentence, not stitched-together fragments.
+3. On a fresh branch with three small commits, run `git rebase -i
+   HEAD~3` and drop the middle commit. Recover it with `git reset --hard
+   ORIG_HEAD`, and explain why the reflog still had it.
+4. Break a number on purpose (flip a sign in a small constant), bury it
+   under a couple of commits, write a one-line test that exits nonzero
+   when the number is wrong, and let `git bisect run` find the commit.
+   This is the single most useful exercise in the chapter.
+5. Tag your starting commit `v0.1-practice` with an annotated tag, then
+   confirm with `git show v0.1-practice` that the message is stored in
+   the tag itself.

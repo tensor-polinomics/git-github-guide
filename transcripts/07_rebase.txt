@@ -1,0 +1,10 @@
+# Feature branch is one commit behind main. Replay it on top:
+$ git rebase main
+Rebasing (1/1)                                                                                Successfully rebased and updated refs/heads/add-event-study.
+# History is now linear, as if the feature work started from the new tip.
+$ git log --oneline --graph -5
+* 982d3de Sketch event-study figure in report
+* cda9799 Document the employment-rate definition
+* dcb18de Note headline result in README
+* f9a193f Add DiD analysis, report, and main table
+* 758175e Add polars cleaning script

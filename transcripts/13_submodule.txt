@@ -1,0 +1,26 @@
+# A shared codebook lives in its own repo. Embed it in this
+# project at a pinned commit, without copying its files in.
+# (Local path needs -c protocol.file.allow for this demo; with a
+#  real GitHub URL it is not needed. Paths show $HOME as ~.)
+$ git -c protocol.file.allow=always submodule add ../shared-codebook external/codebook
+Cloning into '~/research2/minwage-did/external/codebook'...
+done.
+
+# Git tracked a .gitmodules file plus a pinned pointer, not the
+# codebook's contents:
+$ git status --short
+A  .gitmodules
+A  external/codebook
+$ cat .gitmodules
+[submodule "external/codebook"]
+	path = external/codebook
+	url = ../shared-codebook
+
+# The submodule is pinned to one exact commit of the inner repo:
+$ git submodule status
+ 43b0a6d53daf74a057481c5f9dbd2b26fa21c4e0 external/codebook (heads/main)
+
+# In the outer repo that pin is stored as a gitlink (mode 160000),
+# a reference to a commit, not the files themselves:
+$ git ls-tree HEAD -- external/codebook
+160000 commit 43b0a6d53daf74a057481c5f9dbd2b26fa21c4e0	external/codebook
