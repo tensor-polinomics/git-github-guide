@@ -276,8 +276,9 @@ this only when the package is final.
 # GitHub release (the quarantined step above). Zenodo
 # ingests it automatically and assigns the DOI.
 
-# finally, add the concept DOI badge to your README so
-# readers cite the archived version, not a moving branch.
+# finally, add the DOI badge Zenodo provides to your
+# README so readers find the archived record, not a
+# moving branch.
 ```
 
 No DOI was minted for this repository. A real release or DOI happens
