@@ -1,0 +1,42 @@
+# Bootstrapping renv 1.2.3 ---------------------------------------------------
+- Downloading renv ... OK
+- Installing renv  ... OK
+
+- None of the packages recorded in the lockfile are currently installed.
+- Use `renv::restore()` to restore the project library.
+The following package(s) will be updated:
+
+# CRAN -----------------------------------------------------------------------
+- cli          [* -> 3.6.5]
+- dplyr        [* -> 1.2.1]
+- generics     [* -> 0.1.4]
+- glue         [* -> 1.8.0]
+- lifecycle    [* -> 1.0.5]
+- magrittr     [* -> 2.0.4]
+- pillar       [* -> 1.11.1]
+- pkgconfig    [* -> 2.0.3]
+- R6           [* -> 2.6.1]
+- rlang        [* -> 1.1.7]
+- tibble       [* -> 3.3.1]
+- tidyselect   [* -> 1.2.1]
+- utf8         [* -> 1.2.6]
+- vctrs        [* -> 0.7.2]
+- withr        [* -> 3.0.2]
+
+# Installing packages --------------------------------------------------------
+✔ tidyselect 1.2.1                         [linked from cache]
+✔ magrittr 2.0.4                           [linked from cache]
+✔ R6 2.6.1                                 [linked from cache]
+✔ generics 0.1.4                           [linked from cache]
+✔ cli 3.6.5                                [linked from cache]
+✔ withr 3.0.2                              [linked from cache]
+✔ pillar 1.11.1                            [linked from cache]
+✔ glue 1.8.0                               [linked from cache]
+✔ dplyr 1.2.1                              [linked from cache]
+✔ tibble 3.3.1                             [linked from cache]
+✔ utf8 1.2.6                               [linked from cache]
+✔ vctrs 0.7.2                              [linked from cache]
+✔ lifecycle 1.0.5                          [linked from cache]
+✔ rlang 1.1.7                              [linked from cache]
+✔ pkgconfig 2.0.3                          [linked from cache]
+Successfully installed 15 packages in 9.5 milliseconds.

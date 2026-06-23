@@ -9,11 +9,12 @@ Quarto and Overleaf projects fit a version-controlled workflow.
 
 A note on what is captured here. The notebook-diffing tools (`nbdime`,
 `jupytext`) are run for real in the sandbox, so that output is genuine.
-The IDE, Overleaf, and `renv` material is documented from current
-official sources (verified 2026-06-22, logged in
-`verification/2026-06-22-ch9-14-github-sources.md`) because none of those
-run in this book's build environment; the `renv` console capture is a
-path-A item from the user's Mac. Each is flagged where it appears.
+The IDE and Overleaf material is documented from current official
+sources (verified 2026-06-22, logged in
+`verification/2026-06-22-ch9-14-github-sources.md`) because those do not
+run in this book's build environment. The `renv` explanation is
+documented from the same sources and backed by a live path-A console
+capture from a throwaway project on the author's Mac.
 
 ## The editor's Git pane is the same Git {.tier-beginner}
 
@@ -206,11 +207,45 @@ that keeps the library itself out of Git). The lockfile is the thing that
 makes an R result reproducible, exactly as in the Python case.
 
 ::: {.callout-note appearance="minimal"}
-**Documented, not yet captured.** R is not installed in this book's
-sandbox, so the `renv` description above is from renv's official guidance
-rather than a captured run; a live `renv::init()` / `renv::snapshot()` /
-clean `renv::restore()` transcript and `renv.lock` from the author's Mac
-will replace it in a later revision.
+**Captured on the author's Mac (2026-06-23).** In a throwaway project
+containing `library(dplyr)`, `renv::init()` wrote `~/renv-demo/renv.lock`
+and pinned `dplyr` plus its dependency tree (`cli`, `glue`, `rlang`,
+`vctrs`, `tibble`, and the rest). The project was then cloned without
+its private library, and `renv::restore()` rebuilt the library from the
+lockfile.
+
+```bash
+$ git status --short
+A  .Rprofile
+A  .gitignore
+A  analysis.R
+A  renv.lock
+A  renv/.gitignore
+A  renv/activate.R
+A  renv/settings.json
+```
+
+```bash
+$ Rscript -e 'renv::restore()'
+# Bootstrapping renv 1.2.3 ---------------------------------------------------
+- Downloading renv ... OK
+- Installing renv  ... OK
+
+- None of the packages recorded in the lockfile are currently installed.
+- Use `renv::restore()` to restore the project library.
+The following package(s) will be updated:
+...
+# Installing packages --------------------------------------------------------
+✔ tidyselect 1.2.1                         [linked from cache]
+✔ magrittr 2.0.4                           [linked from cache]
+✔ R6 2.6.1                                 [linked from cache]
+...
+Successfully installed 15 packages in 9.5 milliseconds.
+```
+
+Full captures: `transcripts/14_renv_init.txt`,
+`transcripts/14_renv_lock_head.txt`, `transcripts/14_renv_files.txt`,
+`transcripts/14_renv_restore.txt`, and `transcripts/14_renv_status.txt`.
 :::
 
 ## Overleaf and GitHub {.tier-advanced}

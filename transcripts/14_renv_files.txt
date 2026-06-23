@@ -1,0 +1,7 @@
+A  .Rprofile
+A  .gitignore
+A  analysis.R
+A  renv.lock
+A  renv/.gitignore
+A  renv/activate.R
+A  renv/settings.json

@@ -1,0 +1,25 @@
+- Linking packages into the project library ... Done!
+The following package(s) will be updated in the lockfile:
+
+# CRAN -----------------------------------------------------------------------
+- cli          [* -> 3.6.5]
+- dplyr        [* -> 1.2.1]
+- generics     [* -> 0.1.4]
+- glue         [* -> 1.8.0]
+- lifecycle    [* -> 1.0.5]
+- magrittr     [* -> 2.0.4]
+- pillar       [* -> 1.11.1]
+- pkgconfig    [* -> 2.0.3]
+- R6           [* -> 2.6.1]
+- renv         [* -> 1.2.3]
+- rlang        [* -> 1.1.7]
+- tibble       [* -> 3.3.1]
+- tidyselect   [* -> 1.2.1]
+- utf8         [* -> 1.2.6]
+- vctrs        [* -> 0.7.2]
+- withr        [* -> 3.0.2]
+
+The version of R recorded in the lockfile will be updated:
+- R            [* -> 4.5.3]
+
+- Lockfile written to "~/renv-demo/renv.lock".

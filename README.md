@@ -12,8 +12,8 @@ under a locked environment.
 > package) and the reference cheat sheet and checklist remain as stubs.
 > All drafted chapters are validated against the source/style gate. Most
 > teaching examples are backed by real captured terminal output;
-> documented, pending (path-A), and deliberately quarantined GitHub
-> actions are labelled where they appear. Expect the remaining stubs to
+> documented and deliberately quarantined GitHub actions are labelled
+> where they appear. Expect the remaining stubs to
 > fill in over time.
 
 ## What is in here

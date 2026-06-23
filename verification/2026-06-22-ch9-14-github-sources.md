@@ -3,7 +3,7 @@
 Live-verified on the access dates shown. This batch (Phase 4b-3:
 Ch.9 Git->GitHub, Ch.10 GitHub beginners, Ch.11 GitHub advanced + gh,
 Ch.12 collaboration, Ch.14 research toolchain) mixes EXECUTED captures,
-PENDING path-A captures, and DOCUMENTED-NOT-EXECUTED facts:
+path-A captures, and DOCUMENTED-NOT-EXECUTED facts:
 
 - EXECUTED in-sandbox (Linux, Git 2.34.1): all remote mechanics
   (push/fetch/pull/clone) against a local bare repo standing in for
@@ -17,10 +17,13 @@ PENDING path-A captures, and DOCUMENTED-NOT-EXECUTED facts:
   `gh pr list`, `gh run list`, and `gh issue list` with gh 2.95.0
   authenticated as tensor-polinomics. Transcripts:
   `transcripts/09_real_remote.txt`, `transcripts/11_gh_readonly.txt`.
-- PENDING on the user's Mac (path A; NOT yet captured): live renv
-  init/snapshot/restore console + `renv.lock`. Until this lands, the
-  Ch.14 renv block remains documented/instructional, not captured
-  output, and the command list lives in RESUME.md's handover section.
+- EXECUTED locally on the Mac (path A, 2026-06-23): throwaway `renv`
+  project with `library(dplyr)`, R 4.5.3, and renv 1.2.3; captured
+  `renv::init()`, `renv::status()`, the head of `renv.lock`, staged
+  files, and a fresh-clone `renv::restore()`. Transcripts:
+  `transcripts/14_renv_init.txt`, `transcripts/14_renv_lock_head.txt`,
+  `transcripts/14_renv_files.txt`, `transcripts/14_renv_restore.txt`,
+  `transcripts/14_renv_status.txt`.
 - DOCUMENTED-NOT-EXECUTED and pinned below: GitHub web-UI flows
   (repo creation, license/.gitignore pickers, issues, PR review,
   protected branches/rulesets, the server-side "Create a pull request"
@@ -58,7 +61,7 @@ user to run deliberately (never in a copy-paste block): `gh pr create`,
 
 ## G2. GitHub Actions workflow syntax (checkout@v4, runner, token)
 
-Access date: 2026-06-22
+Access date: 2026-06-22 for docs; live capture 2026-06-23
 Source: GitHub Docs "Workflow syntax for GitHub Actions" and
 "Controlling permissions for GITHUB_TOKEN"; actions/checkout;
 astral-sh/setup-uv.
@@ -199,12 +202,13 @@ versions into `renv.lock`; `renv::restore()` reinstalls exactly those
 versions from the lockfile. You commit `renv.lock`, `.Rprofile`,
 `renv/settings.json`, and `renv/activate.R` to Git (renv writes a
 project `.gitignore` that excludes the private library itself). This is
-the direct R analogue of committing `uv.lock` (Ch.8). renv is NOT
-installed in the sandbox (no R), so the chapter's renv section is
-DOCUMENTED from the sources above, not captured. A live path-A
-transcript and `renv.lock` from the user's Mac (to be saved as
-`transcripts/14_renv_*`) will replace it in a later revision; until
-then the renv block is presented as documented, not executed.
+the direct R analogue of committing `uv.lock` (Ch.8). The claims are
+documented from the sources above and backed by a local Mac capture in a
+throwaway `~/renv-demo` project. The capture records `renv::init()`
+writing `renv.lock`, `renv::status()` reporting a consistent project,
+Git staging `.Rprofile`, `analysis.R`, `renv.lock`,
+`renv/.gitignore`, `renv/activate.R`, and `renv/settings.json`, and a
+fresh clone running `renv::restore()` to install 15 locked packages.
 
 ---
 
@@ -300,5 +304,8 @@ operations are the ones already captured in earlier chapters.
 - 14_jupytext_pair.txt  jupytext --to .ipynb -> .py:percent (sandbox)
 - 14_nbdime_configgit.txt  nbdime config-git --enable drivers (sandbox)
 - 14_jupytext_pair2.txt  jupytext --set-formats pairing (sandbox)
-- (path A, PENDING; not captured yet) renv init/snapshot/restore console
-  + renv.lock.
+- 14_renv_init.txt     renv::init() in a dplyr throwaway project (path A)
+- 14_renv_status.txt   renv::status() consistency check (path A)
+- 14_renv_lock_head.txt  first 45 lines of renv.lock (path A, path norm.)
+- 14_renv_files.txt    staged project files after renv init (path A)
+- 14_renv_restore.txt  fresh-clone renv::restore() transcript (path A)
