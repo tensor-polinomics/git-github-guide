@@ -5,14 +5,18 @@ $primary: #2c5f8a;
 /*-- scss:rules --*/
 
 /* ------------------------------------------------------------------
-   Tier badges. Use at the top of a tiered section:
-   ::: {.tier-beginner}
-   ## The daily loop
-   :::
-   ...content...
+   Tier badges. Tag a section heading with a tier class:
+     ## The daily loop {.tier-beginner}
+     ## Inspecting the connection {.tier-advanced}
+   Quarto applies that class to BOTH the wrapping <section> and the
+   heading element, so the badge MUST be scoped to the heading only.
+   Targeting `.tier-* > :first-child::before` (the old rule) matched
+   twice (once via the section -> the <h2>, once via the <h2> -> its
+   section-number <span>) and printed the badge twice. Scoping to the
+   heading elements themselves yields exactly one badge.
    ------------------------------------------------------------------ */
-.tier-beginner > :first-child::before,
-.tier-advanced > :first-child::before {
+:is(h1, h2, h3, h4, h5, h6).tier-beginner::before,
+:is(h1, h2, h3, h4, h5, h6).tier-advanced::before {
   display: inline-block;
   font-size: 0.70rem;
   font-weight: 700;
@@ -22,13 +26,13 @@ $primary: #2c5f8a;
   margin-right: 0.5rem;
   vertical-align: middle;
 }
-.tier-beginner > :first-child::before {
+:is(h1, h2, h3, h4, h5, h6).tier-beginner::before {
   content: "BEGINNER";
   background: #e6f4ea;
   color: #1e7e34;
   border: 1px solid #bcdfc7;
 }
-.tier-advanced > :first-child::before {
+:is(h1, h2, h3, h4, h5, h6).tier-advanced::before {
   content: "ADVANCED";
   background: #fdecea;
   color: #b23b2e;
