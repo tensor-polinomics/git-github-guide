@@ -8,7 +8,8 @@ abstract: >-
   seeded script under a locked environment.
 type: book
 authors:
-  - name: "tensor.polinomics"
+  - family-names: "Luo"
+    given-names: "Emma"
 url: "https://github.com/tensor-polinomics/git-github-guide"
 repository-code: "https://github.com/tensor-polinomics/git-github-guide"
 license: CC-BY-4.0

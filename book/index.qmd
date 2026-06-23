@@ -1,5 +1,19 @@
 # Preface {.unnumbered}
 
+::::: {.content-visible when-format="html"}
+:::: {.hero-band}
+::: {.hero-lead}
+A reproducibility-first path from your first commit to a replication
+package a journal data editor will accept. One real empirical project,
+every command run for real, no computer-science background assumed.
+:::
+
+[Start at Chapter 1](chapters/01-reproducibility.qmd){.btn .btn-primary}
+[The daily loop](chapters/05-git-beginners.qmd){.btn .btn-outline-primary}
+[Command cheat sheet](cheatsheet.qmd){.btn .btn-outline-primary}
+::::
+:::::
+
 This book teaches Git and GitHub to students and researchers in
 economics, finance, accounting, and the social sciences. The
 organizing principle is reproducibility: the ability for someone
@@ -13,6 +27,32 @@ one small empirical project, a difference-in-differences study of a
 minimum-wage change, and every command is run for real so the
 output you see is the output the commands actually produced.
 
+::::: {.content-visible when-format="html"}
+:::: {.grid .feature-grid}
+::: {.g-col-12 .g-col-md-4 .feature-card}
+#### One real project
+
+Every example is built on a single difference-in-differences study of a
+minimum-wage change. The data rebuild from a seeded script and the
+result reproduces under a locked environment.
+:::
+
+::: {.g-col-12 .g-col-md-4 .feature-card}
+#### Tiered for your level
+
+Sections are tagged BEGINNER or ADVANCED, so a first-time terminal user
+and a PhD student assembling a package can each read at their own depth.
+:::
+
+::: {.g-col-12 .g-col-md-4 .feature-card}
+#### Ends in a shippable package
+
+You finish with a documented, licensed, citable replication package: a
+README, a CITATION.cff, a tagged release, and a permanent DOI.
+:::
+::::
+:::::
+
 ## Who this is for
 
 Readers range from a first-year undergraduate who has never opened a
@@ -21,21 +61,10 @@ computer-science background is assumed.
 
 ## How sections are tiered
 
-Technical sections are tagged so you can read at your level:
-
-::: {.tier-beginner}
-### Read this if you are new
-
-BEGINNER material is fully explained and copy-pasteable. If you type
-exactly what you see, it will work.
-:::
-
-::: {.tier-advanced}
-### Read this once the basics click
-
-ADVANCED material assumes you are comfortable with the daily loop
-and want the powerful, sharper tools.
-:::
+Technical sections are tagged so you can read at your level. BEGINNER
+material is fully explained and copy-pasteable: if you type exactly what
+you see, it will work. ADVANCED material assumes you are comfortable with
+the daily loop and want the sharper, more powerful tools.
 
 ## The three callouts
 

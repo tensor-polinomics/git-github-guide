@@ -4,8 +4,8 @@ project:
 
 book:
   title: "Git and GitHub for Social Science Researchers"
-  subtitle: "A reproducibility-first guide for economics, finance, accounting, and the social sciences"
-  author: "tensor.polinomics"
+  subtitle: "A reproducibility-first guide for economics, finance, and the social sciences"
+  author: "Emma Luo"
   date: today
   search: true
   reader-mode: true

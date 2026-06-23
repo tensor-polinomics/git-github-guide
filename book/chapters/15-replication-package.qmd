@@ -152,7 +152,8 @@ message: "If you use this book or its example, please cite it as below."
 title: "Git and GitHub for Social Science Researchers"
 type: book
 authors:
-  - name: "tensor.polinomics"
+  - family-names: "Luo"
+    given-names: "Emma"
 url: "https://github.com/tensor-polinomics/git-github-guide"
 license: CC-BY-4.0
 version: "0.1.0"

@@ -126,6 +126,12 @@ the metadata as APA and BibTeX; reference managers (e.g. Zotero) can
 import it. The book's own root CITATION.cff (type: book, CC-BY-4.0,
 version 0.1.0, date-released 2026-06-21) is the live example and is
 shown verbatim. Matches the file present in the repo at capture time.
+UPDATE 2026-06-23 (front-page revision): the author field was changed
+from the handle "tensor.polinomics" to the person record
+`family-names: Luo` / `given-names: Emma` (the proper CFF form for a
+person). The root CITATION.cff and the Ch.15 verbatim block were edited
+in lockstep and still match; the GitHub account/repo URL
+(github.com/tensor-polinomics/...) is unchanged.
 
 ---
 
