@@ -1,0 +1,11 @@
+##### 09_remote_show #####
+* remote origin
+  Fetch URL: ~/ggremotes/minwage-did.git
+  Push  URL: ~/ggremotes/minwage-did.git
+  HEAD branch: main
+  Remote branch:
+    main tracked
+  Local branch configured for 'git pull':
+    main merges with remote main
+  Local ref configured for 'git push':
+    main pushes to main (up to date)

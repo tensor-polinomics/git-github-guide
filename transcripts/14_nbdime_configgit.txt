@@ -1,0 +1,6 @@
+##### 14_nbdime_configgit #####
+$ nbdime config-git --enable
+$ git config --local --get-regexp 'jupyternotebook'
+diff.jupyternotebook.command git-nbdiffdriver diff
+merge.jupyternotebook.driver git-nbmergedriver merge %O %A %B %L %P
+merge.jupyternotebook.name jupyter notebook merge driver

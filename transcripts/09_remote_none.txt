@@ -1,0 +1,2 @@
+##### 09_remote_none #####
+(empty: a local repo has no remotes until you add one)

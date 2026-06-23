@@ -1,17 +1,213 @@
 # Collaboration Patterns
 
-::: {.callout-note appearance="minimal"}
-**Chapter status:** stub. Scope: Solo vs team; branching strategy; resolving merge conflicts without panic; coauthoring.
+This chapter introduces almost no new Git. Its commands are ones you
+already have: branch, push, pull, merge, resolve a conflict (Chapter 7).
+What is new is the *pattern*, the small set of habits that lets two,
+three, or five people change the same repository without overwriting
+each other or letting `main` rot. Most collaboration disasters are not
+Git failures; they are pattern failures, and they are preventable.
+
+The conflict demo here is real, generated between two clones of a shared
+repository pushing to the same remote (a local bare repo standing in for
+GitHub, as in Chapter 9). Two researchers, Alex and Bo, both edit the
+project's README. Their hashes and the abbreviated paths are real
+output; only `~` is substituted for the home directory.
+
+## Solo is still collaboration {.tier-beginner}
+
+Working alone is collaborating with your future self and your other
+machine. The same discipline pays off: a short-lived branch per task, a
+quick self-review of the diff before merging, and a `main` you keep in a
+working state so that the version you push (and a coauthor might later
+clone) always runs. You do not need the full team apparatus, but the
+core move (do work on a branch, bring it back deliberately) is identical,
+and adopting it solo means nothing changes when a coauthor joins.
+
+## A branching strategy you can actually keep {.tier-beginner}
+
+The strategy that fits research, and that GitHub's own workflow
+recommends, is deliberately minimal: keep `main` always working, and do
+each unit of work (a robustness check, a referee response, a new figure)
+on a **short-lived branch** off `main`. When it is ready, open a pull
+request, review it, merge it, and delete the branch. The two rules that
+keep this healthy are to branch *small* and to merge *often*. Long-lived
+branches are where collaboration goes to die: a "v2-rewrite" branch that
+lives for three months drifts so far from `main` that merging it back
+becomes its own miserable project. Short branches that rejoin within
+days barely conflict at all.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+The single most common research-collaboration mistake is everyone
+committing straight to `main` and pushing whenever. It works for a week,
+then two people push overlapping changes, `main` breaks, and nobody is
+sure which commit is to blame. The fix is not more care; it is the
+pattern above plus a protected `main` (Chapter 11) so that changes
+arrive only through reviewed pull requests. Make the safe path the only
+path.
 :::
 
-<!-- DRAFTING NOTES (remove on final)
-Running example: minimum-wage DiD project in ../sandbox.
-Tier each technical section with ::: {.tier-beginner} / {.tier-advanced}.
-Use PITFALL / RECOVERY / REPRODUCIBILITY callouts.
-Every command block: command + REAL output + one sentence why.
-Wrap code/terminal to ~64 chars. No em-dashes.
--->
+## What actually happens when two people push {.tier-beginner}
+
+Here is the everyday event that surprises beginners. Alex finishes
+first, commits, and pushes to `main` with no trouble. Bo, who started
+from the same point and committed separately, tries to push and is
+**rejected**.
+
+```bash
+$ git push
+To ~/ggremotes/teamproj2.git
+ ! [rejected]        main -> main (fetch first)
+error: failed to push some refs to '~/ggremotes/teamproj2.git'
+hint: Updates were rejected because the remote contains work that you do
+hint: not have locally. This is usually caused by another repository pushing
+hint: to the same ref. You may want to first integrate the remote changes
+hint: (e.g., 'git pull ...') before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+```
+
+This is not an error in the alarming sense; it is Git protecting Alex's
+commit. A push only fast-forwards, so Git refuses to let Bo's push
+discard work that is already on the remote. The message says exactly
+what to do: integrate the remote changes first. Bo pulls.
+
+```bash
+$ git pull origin main
+From ~/ggremotes/teamproj2
+ * branch            main       -> FETCH_HEAD
+   caa8bb8..e80fd33  main       -> origin/main
+Auto-merging README.md
+CONFLICT (content): Merge conflict in README.md
+Automatic merge failed; fix conflicts and then commit the result.
+```
+
+Because Alex and Bo edited the *same lines* of the README, the pull
+cannot merge automatically, and Bo gets the conflict from Chapter 7,
+now arriving through a pull rather than a local merge. The mechanics are
+identical: Git marks the clash and `git status` shows `UU README.md`
+(both sides modified).
+
+```bash
+$ git status --short
+UU README.md
+```
+
+## Resolving a conflict together {.tier-beginner}
+
+Bo opens the file, sees both versions between the markers, and edits it
+into the single line the two of them actually want, deleting all the
+marker lines. Then the resolved file is staged and committed, which
+completes the merge.
+
+```bash
+$ git add README.md
+$ git commit --no-edit
+[main 40efd7a] Merge branch 'main' of ~/ggremotes/teamproj2
+```
+
+The graph now shows the two lines of work rejoining at the merge commit,
+and the push finally succeeds.
+
+```bash
+$ git log --oneline --graph -3
+*   40efd7a Merge branch 'main' of ~/ggremotes/teamproj2
+|\
+| * e80fd33 Refine headline wording (Alex)
+* | 21bf289 Reword headline (Bo)
+|/
+$ git push origin main
+To ~/ggremotes/teamproj2.git
+   e80fd33..40efd7a  main -> main
+```
+
+The merge commit `40efd7a` ties the two lines of work together, both
+contributors' commits (`e80fd33` and `21bf289`) are preserved underneath
+it, and `main` once again has a single agreed README.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+A conflict in *prose* (which wording of a sentence) is resolved by
+agreement and a re-read. A conflict in *analysis code* is more
+dangerous, because both sides run. If Alex changed a regression to
+cluster by county and Bo changed the same lines to cluster by state, the
+markers show the textual clash but not which specification the paper
+reports. Resolving it is a research decision the two coauthors must make
+together, not a merge to rush through alone. Pick the spec on purpose,
+then re-run it (Chapter 16 makes the same point about agents).
+:::
+
+## Reducing conflicts before they happen {.tier-advanced}
+
+Conflicts are not eliminated by skill, but they are made rare by habit.
+Pull (or fetch) before you start work and again before you push, so you
+are always building on the current `main` rather than a stale copy.
+Keep commits and branches small, so any overlap is a few lines, not a
+whole file. And divide the work along the *file* grain where you can:
+if Alex owns `02_analysis.py` this week and Bo owns the figures, they
+almost never touch the same lines, and Git merges their work with no
+conflict at all. Most low-conflict teams are not lucky; they are pulling
+often and not standing on each other's files.
+
+## Coauthoring a single commit {.tier-advanced}
+
+Sometimes a change is genuinely joint: you pair-wrote a methods section
+or debugged a script together, and one person commits for both. Git
+records a single author per commit, but GitHub honours a
+`Co-authored-by` trailer in the message, attributing the commit to
+everyone listed.
+
+```bash
+$ git log -1
+commit 98cbf1c641d94136e319827f03854680f6937e0d
+Author: Bo Truong <bo@example.edu>
+Date:   Fri Feb 13 11:00:00 2026 +0000
+
+    Draft methods note with Alex
+
+    Co-authored-by: Alex Kim <alex@example.edu>
+```
+
+The trailer is plain text at the end of the message (a blank line, then
+`Co-authored-by: Name <email>`), and GitHub turns it into shared credit
+on the commit. For research that contribution record is not vanity; it
+is part of an honest authorship trail.
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+On a team, `main` is the shared source of truth, and its value depends
+entirely on it always being in a working, reproducible state. That is
+the whole case for the pattern in this chapter: branch, review, and a
+protected `main` (Chapter 11) mean every commit on `main` is one that
+passed review and checks, so any coauthor can clone it and reproduce the
+current results at any time. A `main` that anyone can break at any moment
+is not a source of truth; it is a liability everyone has to work around.
+:::
+
+## What you can now do
+
+You can run a project, solo or with coauthors, on a sustainable pattern:
+short-lived branches off a protected `main`, pull requests for review,
+and frequent small merges. You understand why a push gets rejected and
+how to integrate and resolve the conflict that follows, you know to
+treat a code conflict as a shared research decision rather than a merge
+to rush, and you can give joint credit with a `Co-authored-by` trailer.
+With the GitHub chapters behind you, Chapter 13 returns to advanced Git
+mechanics for the research workflows (worktrees, submodules,
+sparse-checkout) that the everyday loop does not cover, and Chapter 14
+fits Git into the editors and tools you actually write in.
 
 ## Try it yourself {.unnumbered}
 
-_Exercise tied to the running example will go here._
+Best done with a partner, or simulated with two clones of one repo:
+
+1. Have two clones of the same GitHub repo. From each, edit the *same
+   line* of the README differently, commit, and push. Confirm the first
+   push succeeds and the second is rejected with "fetch first".
+2. In the rejected clone, `git pull`, get the conflict, resolve it into
+   one agreed line, commit, and push. Confirm both contributors' commits
+   survive under the merge commit in `git log --graph`.
+3. Repeat once but edit *different* files in the two clones. Confirm the
+   second push still needs a pull, but this time merges with no conflict.
+   Explain why.
+4. Make a joint commit with a `Co-authored-by:` trailer and confirm it
+   appears in `git log`. (On GitHub, check that the commit shows two
+   contributors.)
+5. Write two sentences on why a long-lived branch is riskier than five
+   short ones, in terms of the conflicts you saw above.

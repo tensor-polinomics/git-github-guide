@@ -1,0 +1,6 @@
+##### 14_jupytext_pair (set-formats) #####
+$ jupytext --set-formats ipynb,py:percent paired.ipynb
+[jupytext] Reading paired.ipynb in format ipynb
+[jupytext] Updating notebook metadata with '{"jupytext": {"formats": "ipynb,py:percent"}}'
+[jupytext] Unchanged paired.ipynb
+[jupytext] Updating paired.py

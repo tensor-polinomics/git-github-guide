@@ -1,17 +1,251 @@
 # GitHub for Advanced Users
 
-::: {.callout-note appearance="minimal"}
-**Chapter status:** stub. Scope: Pull requests, code review, forks, protected branches, GitHub Actions, the gh CLI.
+Chapter 10 covered the solo, read-and-write side of GitHub. This
+chapter is the machinery that makes a repository a place several people
+(or one careful person) can change code safely: pull requests and
+review, forks for outside contributors, protected branches that stop a
+mistake reaching `main`, and Actions that re-run your checks on every
+push. It closes with `gh`, the command-line interface to all of it.
+
+Two honesty notes carry through. First, the **local** half of each
+workflow (pushing a branch, the commits a pull request will contain) is
+captured for real in the sandbox; the **server** half (the PR object,
+the review UI, the Actions run) is GitHub-side and is described from
+current documentation (verified 2026-06-22, logged in
+`verification/2026-06-22-ch9-14-github-sources.md`). Second, every
+state-changing GitHub action is quarantined: read-only `gh` commands
+appear in copy-paste boxes, but anything that creates, merges, or
+deletes is set apart for you to run deliberately. That is the same
+"a human decides anything hard to undo" rule from Chapter 16, applied to
+our own tooling.
+
+## Pull requests {.tier-beginner}
+
+A **pull request** (PR) proposes merging one branch into another, with
+a diff, a discussion, and a record of who approved it. It is the unit of
+collaborative change on GitHub. The workflow starts locally, with work
+you already know how to do: branch, commit, and push the branch.
+
+```bash
+$ git push -u origin add-robustness
+To ~/ggremotes/teamproj.git
+ * [new branch]      add-robustness -> add-robustness
+Branch 'add-robustness' set up to track remote branch 'add-robustness' from 'origin'.
+```
+
+That is the real push of a feature branch. Against GitHub (rather than
+the local stand-in used here) the response additionally prints a
+"Create a pull request" URL for the branch you just pushed: GitHub's
+server generates that hint, which is why it does not appear above. You
+open the PR from that link or the web UI, choosing the **base** (usually
+`main`) and the **head** (your `add-robustness`). The PR page then shows
+the combined diff and a discussion thread, and it stays open while the
+branch gets more commits, so review and revision happen in one place
+before anything touches `main`.
+
+## Code review is the point, not the paperwork {.tier-advanced}
+
+A reviewer reads the PR's diff and leaves comments, including comments
+pinned to specific lines, then files one of three verdicts: **Comment**
+(remarks, no judgment), **Approve** (good to merge), or **Request
+changes** (a block until addressed). In software this catches bugs. In
+research it catches something more specific and more dangerous: a diff
+that runs fine but does not match the paper. A reviewer's real job on an
+analysis PR is to check that the *specification* is the one the
+manuscript claims, that the sample filter did not silently change, that
+a "small refactor" did not flip a sign. That is judgement work, which is
+exactly why Chapter 16 insists a human, not an agent, signs off on it.
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+The PR is a durable part of the research record, not throwaway process.
+The diff shows exactly what changed, the thread records *why*, and the
+approval records *who checked*. Six months on, "why does Table 3 cluster
+by county?" is answered by the PR that introduced it, not by guesswork.
+Write PR descriptions for that future reader: state what changed in the
+results, not just in the code.
 :::
 
-<!-- DRAFTING NOTES (remove on final)
-Running example: minimum-wage DiD project in ../sandbox.
-Tier each technical section with ::: {.tier-beginner} / {.tier-advanced}.
-Use PITFALL / RECOVERY / REPRODUCIBILITY callouts.
-Every command block: command + REAL output + one sentence why.
-Wrap code/terminal to ~64 chars. No em-dashes.
--->
+## Forks: contributing without write access {.tier-advanced}
+
+You can push a branch directly only to repositories you have write
+access to. To propose a change to one you do not own (another lab's
+code, an open-source tool your project depends on), you **fork** it: the
+button makes a server-side copy under your own account. You then clone
+your fork, branch, commit, push to the fork, and open a pull request
+from your fork's branch back to the original ("upstream") repository.
+The maintainer reviews and merges it on their side. This fork ->
+branch -> push -> PR loop is how essentially all outside contribution on
+GitHub works, and it is worth doing once on a tool you use, both to fix
+something and to understand the model.
+
+## Protected branches: stop the mistake before it lands {.tier-advanced}
+
+By default anyone with write access can push straight to `main`,
+including you at 2 a.m. with an untested change. Branch protection turns
+that off. On the repository's settings you require that changes to
+`main` arrive only through a pull request, that required status checks
+pass first, and optionally that at least one review approves. GitHub now
+offers two mechanisms: classic **branch protection rules** (one rule per
+branch) and the newer **rulesets**, which can layer, apply across a
+whole repo or organization, and even enforce at branch-creation time.
+For a research repo the intent is the same either way: `main` is always
+a state that passed your checks, because nothing reaches it unreviewed
+and unverified.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+Protecting `main` is worth little if the protection is hollow. Requiring
+a PR but no status check just adds a click; requiring a review you
+always give yourself is theatre. The protection earns its keep when a PR
+must pass a real check (the next section) before it can merge, so that a
+broken pipeline physically cannot become `main`. Set up the check first,
+then require it.
+:::
+
+## GitHub Actions: re-run your checks automatically {.tier-advanced}
+
+**GitHub Actions** is GitHub's built-in automation: on an event you
+choose (a push, a pull request), GitHub spins up a fresh virtual machine
+and runs commands you specify. For research this is most valuable as
+**continuous integration**: every push re-runs your project's checks on
+a clean machine that has none of your local cruft, so "works on my
+laptop" gets tested against "works on a bare Ubuntu box" automatically.
+
+A workflow is a YAML file under `.github/workflows/`. This one runs the
+book's own validation gate on every push and PR to `main`:
+
+```yaml
+name: validate-book
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Install pandoc
+        run: sudo apt-get update && sudo apt-get
+          install -y pandoc
+      - name: Run the validation gate
+        run: uv run python tools/validate_book.py book
+```
+
+The pieces: `on` lists the triggering events; `runs-on: ubuntu-latest`
+picks a GitHub-hosted runner; each step either `uses` a prebuilt action
+(`actions/checkout@v4` to check out the repo, `astral-sh/setup-uv` to
+install uv) or `run`s a shell command. `permissions: contents: read`
+grants the job the least privilege it needs (read the code), which is
+the recommended default. The file's syntax was validated before
+shipping:
+
+```bash
+$ python3 -c 'import yaml; d=yaml.safe_load(
+    open("validate.yml")); print(list(d["jobs"]))'
+['lint']
+```
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+CI only certifies what it actually runs, so be precise about the claim.
+The workflow above runs this book's structural and style gate
+(`validate_book.py`), which is a lint, not a render or a rebuild: a green
+badge here means the source still parses and passes the checks, not that
+the analysis reran. That is worth having (it catches a broken
+cross-reference or a malformed code chunk on every push), but it is not a
+reproducibility guarantee. The stronger guarantee is a second job that
+rebuilds from a clean clone: install the locked environment (Chapter 8),
+run the pipeline (make data, clean, analyse), and assert the headline
+invariant (`treat_post = -0.0189`). That job going green is what actually
+certifies "reproduces from a clone." Add the check whose green light you
+want to be able to trust, and do not let a lint badge stand in for a
+rebuild.
+:::
+
+::: {.callout-note appearance="minimal"}
+**Quarantined: turning on automation and protection.** These change
+repository state or spend Actions minutes, so run them deliberately, one
+at a time, not as a block:
+
+```text
+# add the workflow file, then commit and push it
+git add .github/workflows/validate.yml
+git commit -m "Add CI: run the validation gate"
+git push
+
+# after it has run at least once, inspect from the CLI
+gh run list                # recent workflow runs (read-only)
+gh run view <run-id>       # one run's jobs and logs (read-only)
+
+# protect main: set up via Settings -> Branches/Rules in the
+# web UI, or gh api; require the validate-book check to pass.
+```
+
+`gh run list` and `gh run view` are read-only and safe; adding the
+workflow, pushing it, and editing branch rules are the deliberate steps.
+:::
+
+## The gh CLI {.tier-advanced}
+
+`gh` is GitHub's official command-line tool (this book assumes a current
+build; v2.95.0 at the time of writing). It puts the web features above
+in the terminal, which is faster and scriptable. The division that
+matters is read versus write. **Read-only** inspection is safe to run
+anywhere and is how you check state without a browser:
+
+```bash
+gh auth status             # who am I, which scopes
+gh repo view               # this repo's description + README
+gh pr list                 # open pull requests
+gh pr view 7               # one PR: description, checks, reviews
+gh pr diff 7               # the PR's diff, in the terminal
+gh run list                # recent Actions runs
+```
+
+::: {.callout-warning .pitfall title="PITFALL"}
+The **state-changing** `gh` commands are the ones to never paste in
+bulk: `gh pr create`, `gh pr merge`, `gh repo edit`, `gh release
+create`, `gh workflow run`, `gh issue create`. Each makes a real,
+often hard-to-undo change on the server: `gh pr merge` can merge to a
+protected `main`, `gh release create` publishes a tag the world can
+cite. Run them one at a time, having read what they will do. This is the
+Chapter 16 rule in miniature: read-only commands automate freely,
+mutating commands get a human pause.
+:::
+
+## What you can now do
+
+You can propose changes as pull requests and review them for what
+matters in research (does the code match the paper), contribute to repos
+you do not own through the fork-and-PR loop, protect `main` so only
+reviewed and verified changes land, and wire up GitHub Actions so your
+checks re-run on a clean machine at every push. You can drive all of it
+from `gh`, keeping read-only inspection fast and quarantining the
+commands that change server state. Chapter 12 steps back from the tools
+to the human patterns: how solo and team projects actually organize this
+machinery without drowning in process.
 
 ## Try it yourself {.unnumbered}
 
-_Exercise tied to the running example will go here._
+Using your GitHub copy of the running example:
+
+1. Create a branch, add a commit (say, a robustness note in
+   `report.qmd`), push it, and open a pull request into `main`. Read the
+   diff on the PR page and write a description that says what *result*
+   would change.
+2. On the PR, leave a line comment on one changed line, then approve and
+   merge it. Confirm `main` now contains the commit.
+3. Add the `validate-book` workflow above to `.github/workflows/`, push
+   it, and watch the run under the Actions tab (or `gh run list`). Make
+   a commit that breaks the gate on purpose (add an em-dash) and confirm
+   the check goes red.
+4. Protect `main`: require a pull request and the `validate-book` check
+   to pass before merging. Try to push directly to `main` and confirm
+   GitHub rejects it.
+5. From the terminal, run `gh pr list` and `gh run list` to inspect the
+   repository state without opening a browser. Note which `gh` commands
+   you would *not* want to run without thinking first.

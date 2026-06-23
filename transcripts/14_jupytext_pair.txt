@@ -1,0 +1,22 @@
+##### 14_jupytext_pair #####
+$ jupytext --to py:percent analysis.ipynb
+[jupytext] Reading analysis.ipynb in format ipynb
+[jupytext] Writing analysis.py in format py:percent
+$ cat analysis.py
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.19.4
+#   kernelspec:
+#     display_name: Python 3
+#     language: python
+#     name: python3
+# ---
+
+# %%
+effect = -0.0191
+print(f"effect = {effect}")

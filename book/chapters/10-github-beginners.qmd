@@ -1,17 +1,185 @@
 # GitHub for Beginners
 
-::: {.callout-note appearance="minimal"}
-**Chapter status:** stub. Scope: Repos, README, LICENSE, issues, the web UI.
+Chapter 9 connected your repository to a remote and showed that the Git
+half of GitHub is just `push`, `pull`, `clone`. This chapter is about
+the other half: the website. GitHub wraps a hosted Git repository in a
+project home page, a README that renders on arrival, a license the
+platform can detect, an issue tracker, and a file browser with full
+history. For a researcher this layer is what turns a private backup into
+something a coauthor, a referee, or a stranger replicating your paper
+can actually use.
+
+Unlike the rest of the book, this chapter cannot show captured terminal
+output for its main subject, because the subject is a web interface.
+GitHub's UI also changes more often than Git's commands do. So the web
+steps here are described from GitHub's current documentation (verified
+2026-06-22, logged in `verification/2026-06-22-ch9-14-github-sources.md`)
+and flagged as documented-not-captured; button labels may have moved by
+the time you read this. The book's own repository,
+`github.com/tensor-polinomics/git-github-guide`, is the live worked
+example throughout. Where a command can stand in for a click, a
+read-only `gh` box gives you one.
+
+## Creating a repository {.tier-beginner}
+
+There are two ways onto GitHub, and beginners regularly trip on the
+difference.
+
+The **empty-then-push** path matches Chapter 9: create a *bare* repo on
+GitHub (do not let it add anything), then `git remote add origin` and
+`git push -u origin main` from your existing local project. This is the
+right path when the project already exists on your laptop, which for a
+research project it usually does.
+
+The **initialize-on-GitHub** path is for starting fresh. On the New
+Repository page you give the repo a name, choose Public or Private, and
+optionally tick three starter files: a **README**, a **.gitignore**
+chosen from a template list, and a **license** chosen from a picker.
+GitHub then makes a first commit containing those files, and you
+`git clone` the result down to start working.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+Do not mix the two paths. If you initialize the GitHub repo with a
+README *and* you already have local commits, the two histories have no
+common ancestor, and your first `git push` is rejected as
+non-fast-forward (the same rejection Chapter 12 covers). The fix is to
+`git pull --no-rebase origin main --allow-unrelated-histories`, resolve
+any conflict, then push, but the cleaner habit is: existing project ->
+create the GitHub repo empty; brand-new project -> initialize on GitHub
+and clone. Pick one per project.
 :::
 
-<!-- DRAFTING NOTES (remove on final)
-Running example: minimum-wage DiD project in ../sandbox.
-Tier each technical section with ::: {.tier-beginner} / {.tier-advanced}.
-Use PITFALL / RECOVERY / REPRODUCIBILITY callouts.
-Every command block: command + REAL output + one sentence why.
-Wrap code/terminal to ~64 chars. No em-dashes.
--->
+::: {.callout-note appearance="minimal"}
+**The same thing without the web UI (`gh`).** The GitHub CLI creates a
+repository from the terminal, with the same starter-file options as the
+web form. This is a state-changing command, so it sits here on its own,
+to run deliberately, not in a copy-paste block:
+
+```bash
+gh repo create minwage-did --public --source=. \
+  --remote=origin --push
+```
+
+`--source=.` pushes the current local project (the empty-then-push
+path); add `--add-readme`, `--gitignore Python`, or `--license mit` to
+take the initialize-on-GitHub path instead.
+:::
+
+## The README is the front page {.tier-beginner}
+
+GitHub renders the file named `README.md` directly on the repository's
+home page, so it is the first and often only thing a visitor reads. For
+research code it is not decoration; it is the entry point to
+reproducing your work. A README that earns its place answers, briefly:
+what this project is (one line, the paper it backs), how to set up the
+environment (the `uv`/`renv` lockfile from Chapter 8), how to reproduce
+the results (the exact command sequence: make data, clean, analyse), and
+where the data come from if they are not in the repo. The running
+example's README does exactly this, which is why a cloner can rebuild
+the headline estimate without ever talking to you.
+
+## A license is not optional for reuse {.tier-beginner}
+
+Here is the part most researchers get wrong: code with no license is
+**not** free to use. Under copyright law the default is all-rights-
+reserved, so a repository with no `LICENSE` file is one that, strictly,
+nobody else may legally copy, modify, or build on, however public it
+looks. If you want people to replicate and extend your work, which is
+the entire point of posting it, you must say so with a license.
+
+GitHub's picker (offered when you create the repo) lists the common
+choices; `choosealicense.com` explains them in plain language. For
+research, the usual split is a permissive software license for the code
+and a Creative Commons license for the prose and figures. This book's
+own repository does exactly that: **MIT** for the code, **CC BY 4.0**
+for the writing and diagrams, both files at the repository root.
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+Reproducibility has a legal dimension that is easy to miss. A journal's
+data editor, a replicator, or a future student can only *use* your code
+if its license permits it. "It is on GitHub" is not permission. Add a
+`LICENSE` file at the start, not as an afterthought: pick a permissive
+license (MIT or BSD-3-Clause are standard for research code) so reuse is
+unambiguous, and license data and text separately if they have
+different terms. The license is part of the replication package
+(Chapter 15), not a formality.
+:::
+
+## Issues: the project's lab notebook {.tier-beginner}
+
+An **issue** is a titled, threaded note attached to the repository:
+a bug, a task, a question, a decision to revisit. For solo research it
+works as a running lab notebook and todo list ("placebo test for the
+2019 cohort", "referee 2 wants clustered SEs"); for a team it is where
+work is proposed, discussed, and assigned before anyone writes code.
+Each issue gets a number, and that number is the glue: writing
+`Fixes #14` in a commit message or pull request links the two, and
+merging it can close the issue automatically. Months later, the issue
+thread is the *why* behind a change that the diff alone cannot tell you.
+
+::: {.callout-note appearance="minimal"}
+**Read-only issue inspection (`gh`).** Listing and reading issues
+changes nothing, so these are safe to run directly. Creating one
+(`gh issue create`) is state-changing and is left for you to do
+deliberately.
+
+```bash
+gh issue list                 # open issues in this repo
+gh issue view 14              # one issue and its thread
+```
+:::
+
+## Reading a repository on the web {.tier-advanced}
+
+The web UI is genuinely useful for *reading* history, and worth knowing
+beyond the home page. The file browser shows the tree at any commit. Any
+file has a **History** view (the commits that touched it) and a **Blame**
+view (which commit last changed each line, the web version of
+`git blame` from Chapter 7's debugging toolkit). Each commit has its own
+page showing its full diff. Pressing `y` on a file rewrites the URL to a
+**permalink** pinned to the current commit hash, which is the link to
+paste in a paper or an email, because a plain branch URL silently
+changes meaning as `main` moves. None of this is editing; it is the
+fastest way to answer "when did this number change, and who changed it"
+without leaving the browser.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+GitHub lets you edit files and commit straight from the web (the pencil
+icon), which is convenient and a trap for analysis code. A web edit
+commits directly to the branch without your local environment, so
+nothing was re-run and nothing was tested: it is the perfect way to
+commit a typo that breaks the pipeline. Reserve web edits for prose
+(README, docs); make code changes locally where you can run them first.
+:::
+
+## What you can now do
+
+You can create a repository the right way for your situation
+(empty-then-push for existing work, initialize-on-GitHub for a fresh
+start), write a README that lets a stranger reproduce your results,
+attach a license so they are legally allowed to, track tasks and
+decisions as issues that link to the commits that resolve them, and read
+a project's history on the web with History, Blame, and permalinks. That
+is enough to run a solo project entirely in the open. Chapter 11 adds
+the collaboration machinery: pull requests, review, forks, protected
+branches, and automation.
 
 ## Try it yourself {.unnumbered}
 
-_Exercise tied to the running example will go here._
+Using the running example and a free GitHub account:
+
+1. Create a new repository on GitHub, initialized with a README, a
+   Python `.gitignore`, and the MIT license. Clone it, and confirm the
+   three files are present and that GitHub shows "MIT License" on the
+   home page.
+2. Replace the generated README with one that states what the project
+   is and the exact commands to reproduce the headline estimate. Commit
+   and push, then reload the home page to see it render.
+3. Open an issue titled "Add clustered standard errors". In a commit on
+   a branch, write `Refs #1` in the message, push, and confirm GitHub
+   links the commit to the issue.
+4. Open any file's Blame view and find the commit that last changed the
+   headline-result line. Press `y` to get its permalink and note how the
+   URL changes.
+5. Explain in one sentence why a public repository with no `LICENSE`
+   file is still not free for others to reuse.

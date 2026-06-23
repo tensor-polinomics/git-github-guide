@@ -1,0 +1,4 @@
+##### 11_actions_yaml_check #####
+$ python3 -c 'import yaml; d=yaml.safe_load(
+    open("validate.yml")); print(list(d["jobs"]))'
+['lint']

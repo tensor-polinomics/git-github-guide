@@ -1,0 +1,9 @@
+##### 12_coauthor #####
+$ git log -1
+commit 98cbf1c641d94136e319827f03854680f6937e0d
+Author: Bo Truong <bo@example.edu>
+Date:   Fri Feb 13 11:00:00 2026 +0000
+
+    Draft methods note with Alex
+    
+    Co-authored-by: Alex Kim <alex@example.edu>

@@ -1,0 +1,10 @@
+##### 09_fetch #####
+$ git fetch
+From ~/ggremotes/minwage-did
+   c1c408c..1e6fe8c  main       -> origin/main
+$ git status
+On branch main
+Your branch is behind 'origin/main' by 1 commit, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+
+nothing to commit, working tree clean

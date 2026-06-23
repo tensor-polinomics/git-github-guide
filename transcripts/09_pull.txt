@@ -1,0 +1,8 @@
+##### 09_pull #####
+$ git pull
+From ~/ggremotes/minwage-did
+ * branch            main       -> FETCH_HEAD
+Updating c1c408c..1e6fe8c
+Fast-forward
+ README.md | 2 ++
+ 1 file changed, 2 insertions(+)

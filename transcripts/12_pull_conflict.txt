@@ -1,0 +1,10 @@
+##### 12_pull_conflict #####
+$ git pull origin main
+From ~/ggremotes/teamproj2
+ * branch            main       -> FETCH_HEAD
+   caa8bb8..e80fd33  main       -> origin/main
+Auto-merging README.md
+CONFLICT (content): Merge conflict in README.md
+Automatic merge failed; fix conflicts and then commit the result.
+$ git status --short
+UU README.md

@@ -1,17 +1,266 @@
 # The Research Toolchain
 
-::: {.callout-note appearance="minimal"}
-**Chapter status:** stub. Scope: Git with RStudio and VS Code; Jupyter notebook diffing; Quarto + Git; Overleaf-GitHub sync.
+You do not write research at a bare terminal. You write it in RStudio or
+VS Code, in Jupyter notebooks, in Quarto documents, in Overleaf. Git
+sits underneath all of these, and this chapter is about the seams: how
+the editor's Git buttons map to the commands you already know, why
+notebooks need special handling before Git can diff them sanely, and how
+Quarto and Overleaf projects fit a version-controlled workflow.
+
+A note on what is captured here. The notebook-diffing tools (`nbdime`,
+`jupytext`) are run for real in the sandbox, so that output is genuine.
+The IDE, Overleaf, and `renv` material is documented from current
+official sources (verified 2026-06-22, logged in
+`verification/2026-06-22-ch9-14-github-sources.md`) because none of those
+run in this book's build environment; the `renv` console capture is a
+path-A item from the user's Mac. Each is flagged where it appears.
+
+## The editor's Git pane is the same Git {.tier-beginner}
+
+RStudio and VS Code both ship a graphical Git interface, and both are
+thin convenience layers over the exact commands from Chapters 5, 7, and
+9. RStudio's **Git pane** (enabled per project when the project folder is
+a repo) stages files with a checkbox, opens a diff viewer, commits with
+a message box, and has push/pull buttons and a history view. VS Code's
+**Source Control** view does the same (stage, commit, branch, sync), and
+its GitHub Pull Requests extension brings PR review (Chapter 11) into the
+editor. Nothing about these changes what Git does: a click on "Commit" is
+`git commit`, "Push" is `git push`, the diff is `git diff`. Learn the
+commands first (you have) and the GUI is just faster for the daily loop.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+The risk with a Git GUI is that it hides what it is doing until the
+moment it cannot cope. A button labelled "Sync" may pull-then-push, or
+merge, or rebase, depending on settings, and when it hits a conflict or a
+rejected push it drops you back to exactly the situation Chapters 7 and
+12 covered, now with less visible context. Treat the GUI as a fast path
+for `status`/`add`/`commit`/`push`, and the moment anything looks
+unusual, switch to the terminal where you can see the whole state.
 :::
 
-<!-- DRAFTING NOTES (remove on final)
-Running example: minimum-wage DiD project in ../sandbox.
-Tier each technical section with ::: {.tier-beginner} / {.tier-advanced}.
-Use PITFALL / RECOVERY / REPRODUCIBILITY callouts.
-Every command block: command + REAL output + one sentence why.
-Wrap code/terminal to ~64 chars. No em-dashes.
--->
+## Notebooks: why Git diffs them badly {.tier-beginner}
+
+A Jupyter notebook (`.ipynb`) looks like cells of code and output, but
+on disk it is a single JSON file. That JSON stores your source, an
+`execution_count` for each cell, and the full cell outputs. So a plain
+`git diff` after merely *re-running* a notebook, with no real code
+change, is cluttered with execution counts and output churn:
+
+```bash
+$ git diff
+diff --git a/analysis.ipynb b/analysis.ipynb
+index 7696b37..c5c42f9 100644
+--- a/analysis.ipynb
++++ b/analysis.ipynb
+@@ -2,13 +2,13 @@
+  "cells": [
+   {
+    "cell_type": "code",
+-   "execution_count": 1,
++   "execution_count": 7,
+    "id": "a1",
+    "metadata": {},
+    "outputs": [
+-    {"name": "stdout", "output_type": "stream", "text": ["effect = -0.0189\n"]}
++    {"name": "stdout", "output_type": "stream", "text": ["effect = -0.0191\n"]}
+    ],
+-   "source": ["effect = -0.0189\n", "print(f\"effect = {effect}\")"]
++   "source": ["effect = -0.0191\n", "print(f\"effect = {effect}\")"]
+```
+
+Even in this tiny example the real change (one number) is buried among
+metadata changes. In a real notebook, cell outputs include base64-encoded
+images and long tables, so a one-line code edit can produce a diff
+thousands of lines long that no reviewer can read, and merge conflicts in
+that JSON are nearly impossible to resolve by hand. Two tools fix this.
+
+## Notebooks, fix one: diff them as notebooks {.tier-advanced}
+
+`nbdime` understands notebook structure and diffs cell by cell, labelling
+exactly what changed (source, outputs, execution count) instead of
+diffing raw JSON. The same change as above, through `nbdiff`:
+
+```bash
+$ nbdiff --no-color HEAD analysis.ipynb
+nbdiff analysis.ipynb (HEAD) analysis.ipynb
+--- analysis.ipynb (HEAD)  (no timestamp)
++++ analysis.ipynb  2026-02-16 09:05:00.000000
+## replaced /cells/0/execution_count:
+-  1
++  7
+
+## modified /cells/0/outputs/0/text:
+@@ -1 +1 @@
+-effect = -0.0189
++effect = -0.0191
+
+## modified /cells/0/source:
+@@ -1,2 +1,2 @@
+-effect = -0.0189
++effect = -0.0191
+ print(f"effect = {effect}")
+```
+
+Now each change is named and grouped: the execution-count bump, the
+output change, and the one-line source edit are separate and legible.
+`nbdime` can also wire itself into Git so that `git diff` and
+`git merge` route notebooks through it, but this is opt-in: you run
+`nbdime config-git --enable` once, which registers the drivers in your
+Git config.
+
+```bash
+$ nbdime config-git --enable
+$ git config --local --get-regexp 'jupyternotebook'
+diff.jupyternotebook.command git-nbdiffdriver diff
+merge.jupyternotebook.driver git-nbmergedriver merge %O %A %B %L %P
+merge.jupyternotebook.name jupyter notebook merge driver
+```
+
+After that your normal `git diff` on a notebook uses the cell-aware diff
+above, and a web view (`nbdiff-web`) renders rich diffs in the browser.
+
+## Notebooks, fix two: pair with a text file {.tier-advanced}
+
+`jupytext` takes a different angle: keep a plain-text twin of the
+notebook that Git tracks cleanly. Converting the notebook to a
+"percent"-format script strips the JSON and outputs entirely, leaving
+just the code in readable cells:
+
+```bash
+$ jupytext --to py:percent analysis.ipynb
+[jupytext] Reading analysis.ipynb in format ipynb
+[jupytext] Writing analysis.py in format py:percent
+$ cat analysis.py
+# %%
+effect = -0.0191
+print(f"effect = {effect}")
+```
+
+(The file also carries a small commented header recording the jupytext
+and kernel versions.) That `--to` is a one-off conversion. To keep the
+two files in sync as a *pair*, you set the formats once, which records
+the pairing in the notebook's metadata so Jupyter (with jupytext
+installed) regenerates the `.py` every time you save:
+
+```bash
+$ jupytext --set-formats ipynb,py:percent paired.ipynb
+[jupytext] Reading paired.ipynb in format ipynb
+[jupytext] Updating notebook metadata with '{"jupytext": {"formats": "ipynb,py:percent"}}'
+[jupytext] Unchanged paired.ipynb
+[jupytext] Updating paired.py
+```
+
+From then on you edit in Jupyter as usual and commit the `.py`, which
+diffs and merges like any script. The notebook stays for interactive
+work; the text twin is what version control sees.
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+Pick one notebook discipline and apply it before committing: either pair
+with `jupytext` and track the text twin, or strip outputs on commit with
+`nbstripout` (a separate tool whose `nbstripout --install` registers a
+Git filter that clears outputs as files are staged) so only inputs are
+versioned. `nbdime` diffs and merges notebooks; it is `nbstripout` that
+strips outputs, so reach for the right one. A notebook committed with
+stale embedded outputs is an active
+reproducibility hazard: the saved numbers and figures may no longer match
+what the code produces, and a reader cannot tell. Version the inputs;
+regenerate the outputs.
+:::
+
+## Quarto projects under Git {.tier-beginner}
+
+Quarto (this book is a Quarto project) mixes prose and executable code,
+and the Git rule follows Chapter 8's logic: version the source, ignore
+the rebuildable outputs, with one important exception. Add the render
+output directory to `.gitignore` (`/_book/` for a book, `/_site/` for a
+website), and Quarto itself adds `/.quarto/` on render. But the
+top-level **`_freeze/`** directory, which caches the results of your
+executable code, *should* be committed. Committing `_freeze/` lets a
+collaborator or a CI job (Chapter 11) reproduce the rendered document
+without re-running every computation, and Quarto re-runs only the
+documents you actually changed on the next render.
+
+::: {.callout-note appearance="minimal"}
+A minimal `.gitignore` for a Quarto project:
+
+```text
+/_book/
+/.quarto/
+# commit _freeze/ : it caches computed results
+```
+
+Documented from Quarto's project guidance; this book's own repository is
+configured this way.
+:::
+
+## R projects: renv is uv.lock for R {.tier-advanced}
+
+Chapter 8 committed a `uv.lock` to pin the Python environment. R's
+equivalent is **renv**, and the workflow is the direct analogue.
+`renv::init()` gives the project a private library and writes an initial
+`renv.lock`; `renv::snapshot()` records the exact installed versions into
+`renv.lock`; a collaborator runs `renv::restore()` to reinstall precisely
+those versions. You commit `renv.lock` together with `.Rprofile`,
+`renv/settings.json`, and `renv/activate.R` (renv writes a `.gitignore`
+that keeps the library itself out of Git). The lockfile is the thing that
+makes an R result reproducible, exactly as in the Python case.
+
+::: {.callout-note appearance="minimal"}
+**Documented, not yet captured.** R is not installed in this book's
+sandbox, so the `renv` description above is from renv's official guidance
+rather than a captured run; a live `renv::init()` / `renv::snapshot()` /
+clean `renv::restore()` transcript and `renv.lock` from the author's Mac
+will replace it in a later revision.
+:::
+
+## Overleaf and GitHub {.tier-advanced}
+
+Many social-science papers are written in Overleaf while the code lives
+on GitHub, and Overleaf can link the two. The connection is a **premium**
+Overleaf feature: you link your Overleaf account to GitHub in Account
+Settings, then create the Overleaf project with New Project -> Import from
+GitHub, after which a menu action pushes and pulls between the Overleaf
+project and the linked repository. The sync is explicit, not continuous:
+you press the button to move changes each way.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+Overleaf's sync has documented edges worth knowing before you rely on it.
+You cannot link an *existing* Overleaf project to an *existing* GitHub
+repo: the import creates the project from the repo, so set the direction
+up front. Because the sync is manual and bidirectional, editing the same
+file in both places between syncs produces a conflict you resolve by
+hand, so treat one side (usually the GitHub repo) as the source of truth
+and sync often. Overleaf also recommends keeping commits under ~100 files
+and the project under ~100 MB. Documented from Overleaf's docs; not
+exercised in this book's build.
+:::
+
+## What you can now do
+
+You can connect Git to the tools you actually write in: drive the daily
+loop from the RStudio or VS Code Git pane while knowing the commands
+underneath, tame Jupyter notebooks so Git can diff and merge them (pair
+with `jupytext` or diff with `nbdime`, and never commit stale outputs),
+configure a Quarto project to ignore its outputs while committing the
+`_freeze/` cache, pin an R environment with `renv` the way Chapter 8
+pinned Python, and sync an Overleaf manuscript to GitHub with its edges
+in mind. Chapter 15 gathers the whole project (code, pinned environment,
+tagged release) into a formal replication package.
 
 ## Try it yourself {.unnumbered}
 
-_Exercise tied to the running example will go here._
+1. In RStudio or VS Code, open your clone of the running example, make a
+   one-line edit, and commit it from the GUI Git pane. Then run
+   `git log -1` in a terminal and confirm the GUI made an ordinary
+   commit.
+2. Create a small notebook, commit it, re-run it without changing code,
+   and run `git diff`. Identify which changes are noise (execution count,
+   outputs) versus real source changes.
+3. Install `jupytext`, pair the notebook with a `.py:percent` twin, and
+   confirm the `.py` diffs cleanly when you change one line of code.
+4. Set up a `.gitignore` for a Quarto project that ignores `/_book/` and
+   `/.quarto/` but commits `_freeze/`. Explain in one sentence why
+   `_freeze/` is the exception.
+5. If you use R: run `renv::init()` in a project, `renv::snapshot()`, and
+   inspect `renv.lock`. Name the files you would commit so a collaborator
+   can `renv::restore()` your environment.

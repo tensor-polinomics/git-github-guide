@@ -1,0 +1,13 @@
+##### 12_resolve_push #####
+$ git add README.md
+$ git commit --no-edit
+[main 40efd7a] Merge branch 'main' of ~/ggremotes/teamproj2
+$ git log --oneline --graph -3
+*   40efd7a Merge branch 'main' of ~/ggremotes/teamproj2
+|\  
+| * e80fd33 Refine headline wording (Alex)
+* | 21bf289 Reword headline (Bo)
+|/  
+$ git push origin main
+To ~/ggremotes/teamproj2.git
+   e80fd33..40efd7a  main -> main

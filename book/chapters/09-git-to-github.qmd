@@ -1,17 +1,283 @@
 # From Git to GitHub
 
-::: {.callout-note appearance="minimal"}
-**Chapter status:** stub. Scope: Remotes, push/pull/fetch, clone, the distributed model; GitHub as one host among several.
+Everything so far has been local. The daily loop (Chapter 5), the
+power tools (Chapter 7), even the environment lockfile (Chapter 8) all
+work on a laptop with no internet. That is by design: Git is complete
+on its own. This chapter adds the one thing a local repository cannot
+give you, a second copy somewhere else: a backup, a place to
+collaborate, and the address you put in a paper so others can get your
+code. GitHub is the most common such place, but it is not special to
+Git. It is one **remote** among many.
+
+The mechanics in this chapter were all run for real. Because the
+server side of a remote is just another Git repository, the
+push/fetch/pull/clone demos run against a local **bare repository**
+standing in for GitHub, so the output is exact and reproducible offline.
+GitHub adds hosting, a web interface, accounts, and access control on
+top of identical Git behaviour (Chapters 10 and 11). Where it matters,
+a box shows the read-only commands to run against the book's real repo,
+`github.com/tensor-polinomics/git-github-guide`, which confirm the same
+behaviour against GitHub itself. Paths are abbreviated (`~`); your
+hashes will differ.
+
+## The distributed model in one paragraph
+
+Git is **distributed**: every clone is a full repository, with the
+entire history and every branch, not a thin view of a server. There is
+no privileged master copy the way older tools had. A "remote" is simply
+another repository you have nicknamed so you can exchange commits with
+it. The common setup, one shared remote called `origin` that everyone
+pushes to and pulls from, is a *convention*, not a requirement Git
+enforces. Understanding this is what makes the rest of the chapter
+obvious: pushing and pulling are just moving commits between two real
+repositories that happen to be on different machines.
+
+## Connecting a repository to a remote {.tier-beginner}
+
+A fresh local project has no remotes. You can ask, and Git lists
+nothing.
+
+```bash
+$ git remote -v
+(empty: a local repo has no remotes until you add one)
+```
+
+You create the repository on GitHub first (Chapter 10 walks through the
+web steps), which gives you a URL. Then you tell your local repo about
+it with `git remote add`, conventionally naming it `origin`. The
+command prints nothing; `git remote -v` confirms it took.
+
+```bash
+$ git remote add origin git@github.com:you/minwage-did.git
+$ git remote -v
+origin	~/ggremotes/minwage-did.git (fetch)
+origin	~/ggremotes/minwage-did.git (push)
+```
+
+The two lines (fetch and push) are the same URL here, as they almost
+always are. `origin` is now a name your repo understands; nothing has
+been sent yet.
+
+::: {.callout-tip .recovery title="RECOVERY"}
+Typed the wrong URL, or GitHub gave you HTTPS when you wanted SSH? You
+do not remove and re-add the remote. Fix it in place with
+`git remote set-url origin <correct-url>`, then re-check with
+`git remote -v`. The same command is how you migrate a project to a
+different host later (set the URL to the new one and push); see
+host-portability below.
 :::
 
-<!-- DRAFTING NOTES (remove on final)
-Running example: minimum-wage DiD project in ../sandbox.
-Tier each technical section with ::: {.tier-beginner} / {.tier-advanced}.
-Use PITFALL / RECOVERY / REPRODUCIBILITY callouts.
-Every command block: command + REAL output + one sentence why.
-Wrap code/terminal to ~64 chars. No em-dashes.
--->
+## Push: send your commits to the remote {.tier-beginner}
+
+The first push uploads your history and links your local `main` to the
+remote's `main` so future pushes know where to go. That link is what
+`-u` (short for `--set-upstream`) sets up.
+
+```bash
+$ git push -u origin main
+To ~/ggremotes/minwage-did.git
+ * [new branch]      main -> main
+Branch 'main' set up to track remote branch 'main' from 'origin'.
+```
+
+Your five commits now exist in two places. From here on, because the
+upstream is set, a plain `git push` sends whatever new commits you have
+made.
+
+```bash
+$ git push
+To ~/ggremotes/minwage-did.git
+   1e6fe8c..e6605f6  main -> main
+```
+
+The `1e6fe8c..e6605f6` is Git reporting the range of commits it moved:
+the remote's `main` advanced from the old tip to the new one.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+`git push` sends commits, and commits are forever. If you committed a
+dataset or a secret earlier (Chapter 6), pushing publishes it to the
+remote, and on a public repo that is effectively permanent even if you
+later delete the file. Before the first push of any project, run
+`git log --stat` or `git ls-files` and look at what is actually tracked.
+The cheapest leak to prevent is the one still sitting on your laptop.
+:::
+
+## Clone: get a repository you do not have {.tier-beginner}
+
+`git clone` is the mirror image of the first push: it copies a remote
+repository down in full, history and all, and sets up `origin`
+automatically. This is how a collaborator joins, and how *you* start on
+a second machine.
+
+```bash
+$ git clone ~/ggremotes/minwage-did.git minwage-did-laptop2
+Cloning into 'minwage-did-laptop2'...
+done.
+$ cd minwage-did-laptop2 && git log --oneline -3
+c1c408c Pin the software environment with a uv lockfile
+dcb18de Note headline result in README
+f9a193f Add DiD analysis, report, and main table
+$ git remote -v
+origin	~/ggremotes/minwage-did.git (fetch)
+origin	~/ggremotes/minwage-did.git (push)
+```
+
+The clone arrives with the complete log and `origin` already wired.
+There is nothing thin about it: this copy could rebuild the entire
+project, and the data and results regenerate from the seeded scripts
+(Chapter 8) even though they were never in Git.
+
+## Fetch and pull: bring remote work down {.tier-beginner}
+
+When the remote has commits you do not (a coauthor pushed, or you
+pushed from the other machine), you retrieve them. There are two
+commands, and the difference matters. `git fetch` downloads the new
+commits but does **not** touch your working files; it just updates your
+view of where the remote is.
+
+```bash
+$ git fetch
+From ~/ggremotes/minwage-did
+   c1c408c..1e6fe8c  main       -> origin/main
+$ git status
+On branch main
+Your branch is behind 'origin/main' by 1 commit, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+
+nothing to commit, working tree clean
+```
+
+Fetch is the safe, inspect-first option: now you can run
+`git log main..origin/main` to see exactly what arrived before merging
+it. `git pull` is `git fetch` followed immediately by a merge of those
+new commits into your current branch.
+
+```bash
+$ git pull
+From ~/ggremotes/minwage-did
+ * branch            main       -> FETCH_HEAD
+Updating c1c408c..1e6fe8c
+Fast-forward
+ README.md | 2 ++
+ 1 file changed, 2 insertions(+)
+```
+
+Because your `main` had no commits of its own that the remote lacked,
+the update was a **fast-forward**: Git just slid your branch pointer up
+to the remote's tip, no merge commit needed. When both sides have new
+commits, pull has to make a real merge (or rebase), which is where
+conflicts live; Chapter 12 takes that case head-on.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+The habit worth building is `git fetch` then look, not reflexive
+`git pull`. Pull changes your files immediately, and if the remote and
+your local branch have diverged it can drop you into a merge mid-task,
+exactly when you wanted a clean tree. Fetch first, read what came in
+with `git log ..origin/main`, then pull (or rebase) deliberately.
+:::
+
+## Inspecting the connection {.tier-advanced}
+
+`git remote show origin` gives the full picture of the relationship:
+the URLs, the remote's default branch, and which local branch is
+configured to push and pull where.
+
+```bash
+$ git remote show origin
+* remote origin
+  Fetch URL: ~/ggremotes/minwage-did.git
+  Push  URL: ~/ggremotes/minwage-did.git
+  HEAD branch: main
+  Remote branch:
+    main tracked
+  Local branch configured for 'git pull':
+    main merges with remote main
+  Local ref configured for 'git push':
+    main pushes to main (up to date)
+```
+
+This is the command to reach for when a push or pull goes somewhere you
+did not expect: it shows the tracking wiring in one place, so you can
+see whether `main` really points at the remote you think it does.
+
+## GitHub is one host, not the only one {.tier-advanced}
+
+Nothing in this chapter is GitHub-specific. The same `git remote add`,
+`push`, `fetch`, `pull`, and `clone` work against GitLab, Codeberg, a
+university-hosted GitLab, a bare repository on a lab server reached over
+SSH, or a Git server you run yourself. The URL changes; the commands do
+not. Moving a project between hosts is therefore just repointing the
+remote:
+
+```bash
+$ git remote set-url origin git@gitlab.com:you/minwage-did.git
+$ git push
+```
+
+This portability is a real reproducibility property, not a triviality.
+Your work is not locked inside one company's website. If a host
+disappears, raises prices, or is blocked at your institution, every
+clone is still a complete repository, and you re-home it with one
+command. GitHub is the default in this book because it is where most
+social-science collaborators and journals expect to find code, not
+because Git needs it.
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+A remote is a backup and a meeting point, not the source of truth: the
+truth is the commit history, which every clone holds in full. For a
+*citable* version, pushing alone is not enough, because branches move.
+Tag the exact commit (Chapter 7), push the tag
+(`git push origin v1.0-wp`), and cite the tag. A reader who clones and
+checks out `v1.0-wp` gets the precise code behind your results, on
+whatever host the repository currently lives. Chapter 15 turns that
+tagged snapshot into an archived, DOI-minted release.
+:::
+
+::: {.callout-note appearance="minimal"}
+**Against the real repository (read-only).** These commands inspect the
+book's actual GitHub remote without changing anything, and confirm the
+behaviour above against GitHub rather than a local stand-in. Run them in
+a clone of a real repo:
+
+```bash
+git remote -v                 # the real github.com URL
+git ls-remote --heads origin  # branches the server has
+git push --dry-run            # what a push WOULD send, sends nothing
+```
+
+`git push --dry-run` is the safe way to preview a push: it reports the
+commit range it would transfer and exits without sending anything.
+:::
+
+## What you can now do
+
+You can connect a local project to a remote with `git remote add`, send
+your history with `git push -u` and keep it current with plain
+`git push`, start anywhere from a `git clone`, and bring collaborators'
+work down with `git fetch` (inspect first) or `git pull` (fetch and
+merge). You understand that a remote is just another full repository,
+that `origin` is a convention, and that the whole workflow is portable
+across hosts because Git is distributed. What you do not yet have is the
+layer GitHub builds on top of this: the web interface, repositories with
+READMEs and licenses, issues, and pull requests. Chapter 10 starts
+there.
 
 ## Try it yourself {.unnumbered}
 
-_Exercise tied to the running example will go here._
+You will need a free GitHub account (Chapter 10 covers signup) or any
+remote you can reach. Work in a clone of the running example.
+
+1. Create an empty repository on GitHub, then `git remote add origin`
+   its URL and `git push -u origin main`. Reload the web page and
+   confirm your five commits are there.
+2. Clone your new GitHub repo into a second folder. Run
+   `git log --oneline` in the clone and confirm the history matches.
+   Explain why the clone did not need the `data/` directory.
+3. In the clone, edit the README, commit, and `git push`. Back in the
+   original folder, run `git fetch` then `git log main..origin/main` to
+   see the incoming commit *before* merging it, then `git pull`.
+4. Run `git remote show origin` and find the line that says your `main`
+   pushes to the remote's `main`.
+5. Tag the current commit `v0.1-practice`, push the tag with
+   `git push origin v0.1-practice`, and confirm on GitHub that the tag
+   appears under the repository's releases/tags view.

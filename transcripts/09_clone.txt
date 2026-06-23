@@ -1,0 +1,10 @@
+##### 09_clone #####
+Cloning into 'minwage-did-laptop2'...
+done.
+$ cd minwage-did-laptop2 && git log --oneline -3
+c1c408c Pin the software environment with a uv lockfile
+dcb18de Note headline result in README
+f9a193f Add DiD analysis, report, and main table
+$ git remote -v
+origin	~/ggremotes/minwage-did.git (fetch)
+origin	~/ggremotes/minwage-did.git (push)

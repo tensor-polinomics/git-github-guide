@@ -1,0 +1,3 @@
+##### 09_remote_add #####
+origin	~/ggremotes/minwage-did.git (fetch)
+origin	~/ggremotes/minwage-did.git (push)

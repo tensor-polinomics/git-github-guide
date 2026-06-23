@@ -1,0 +1,23 @@
+##### 14_git_diff_ipynb #####
+$ git diff
+diff --git a/analysis.ipynb b/analysis.ipynb
+index 7696b37..c5c42f9 100644
+--- a/analysis.ipynb
++++ b/analysis.ipynb
+@@ -2,13 +2,13 @@
+  "cells": [
+   {
+    "cell_type": "code",
+-   "execution_count": 1,
++   "execution_count": 7,
+    "id": "a1",
+    "metadata": {},
+    "outputs": [
+-    {"name": "stdout", "output_type": "stream", "text": ["effect = -0.0189\n"]}
++    {"name": "stdout", "output_type": "stream", "text": ["effect = -0.0191\n"]}
+    ],
+-   "source": ["effect = -0.0189\n", "print(f\"effect = {effect}\")"]
++   "source": ["effect = -0.0191\n", "print(f\"effect = {effect}\")"]
+   }
+  ],
+  "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"}},
