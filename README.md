@@ -7,14 +7,13 @@ throughout: a simulated minimum-wage difference-in-differences study
 whose data rebuild from a seeded script and whose result reproduces
 under a locked environment.
 
-> **Status: work in progress.** Sixteen of the seventeen chapters are
-> drafted (1-14, 16, 17); only Chapter 15 (shipping a replication
-> package) and the reference cheat sheet and checklist remain as stubs.
-> All drafted chapters are validated against the source/style gate. Most
-> teaching examples are backed by real captured terminal output;
-> documented and deliberately quarantined GitHub actions are labelled
-> where they appear. Expect the remaining stubs to
-> fill in over time.
+> **Status: work in progress.** All seventeen chapters are drafted, as
+> are the reference cheat sheet and reproducibility checklist. Every
+> chapter is validated against the source/style gate. Most teaching
+> examples are backed by real captured terminal output; documented and
+> deliberately quarantined GitHub actions (including tagged releases and
+> Zenodo DOIs) are labelled where they appear. A final cross-book audit
+> and a fresh render are still to come.
 
 ## What is in here
 

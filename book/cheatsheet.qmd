@@ -1,6 +1,127 @@
 # Command Cheat Sheet {.unnumbered}
 
-::: {.callout-note appearance="minimal"}
-**Status:** stub. One-page printable reference of the commands used
-in this book, grouped by daily loop, branching, remotes, recovery.
+A one-page reference for the commands taught in this book. Nothing here
+is new: each command is explained in the chapter noted beside it. Modern
+Git throughout (`git switch` / `git restore`, not `git checkout`).
+
+## One-time setup {.unnumbered}
+
+See [Chapter 4](chapters/04-install-setup.qmd).
+
+```bash
+# identity (used in every commit)
+git config --global user.name "Your Name"
+git config --global user.email "you@example.edu"
+
+# make new repos start on main
+git config --global init.defaultBranch main
+
+# inspect your config
+git config --global --list
+```
+
+## The daily loop {.unnumbered}
+
+See [Chapter 5](chapters/05-git-beginners.qmd).
+
+```bash
+git status -s            # what changed (short form)
+git diff                 # unstaged changes
+git add <file>           # stage a file
+git add -p               # stage selected hunks
+git diff --staged        # what you are about to commit
+git commit -m "message"  # commit the staged snapshot
+git log --oneline        # compact history
+```
+
+## Undo, safely {.unnumbered}
+
+See [Chapter 5](chapters/05-git-beginners.qmd) and
+[Chapter 17](chapters/17-disasters-recovery.qmd).
+
+```bash
+git restore <file>          # discard unstaged edits
+git restore --staged <file> # unstage, keep edits
+git commit --amend          # fix the last commit
+git revert <commit>         # undo a commit with a new commit
+git reset --soft HEAD~1     # uncommit, keep changes staged
+git reflog                  # find "lost" commits (90 days)
+```
+
+## Branching and history {.unnumbered}
+
+See [Chapter 7](chapters/07-git-advanced.qmd).
+
+```bash
+git switch -c <branch>   # create and switch to a branch
+git switch <branch>      # switch to an existing branch
+git merge <branch>       # merge a branch into the current one
+git merge --abort        # back out of a conflicted merge
+git stash                # shelve work in progress
+git rebase -i <base>     # tidy local commits before sharing
+git bisect start         # binary-search for a breaking commit
+git cherry-pick <commit> # apply one commit here
+git log --oneline --graph
+```
+
+## Tags and releases {.unnumbered}
+
+See [Chapter 7](chapters/07-git-advanced.qmd) and
+[Chapter 15](chapters/15-replication-package.qmd).
+
+```bash
+git tag -a v1.0.0 -m "..."  # annotated, named version
+git tag -n                  # list tags with messages
+git show v1.0.0 --stat      # what a tag points at
+git tag -d v1.0.0           # delete a local tag (pre-push)
+```
+
+## What must never be committed {.unnumbered}
+
+See [Chapter 6](chapters/06-never-commit.qmd).
+
+```bash
+# keep data, secrets, and noise out via .gitignore
+git status --ignored -s     # confirm they are ignored
+git rm --cached <file>      # stop tracking an added file
+
+# last resort: purge a secret from ALL history
+git filter-repo --invert-paths --path <leaked-file>
+```
+
+::: {.callout-warning .pitfall title="PITFALL"}
+`git filter-repo` rewrites history and changes commit hashes for
+everyone. It is a recovery tool, not a daily one. See
+[Chapter 6](chapters/06-never-commit.qmd) before using it, and rotate any
+exposed secret regardless.
 :::
+
+## Remotes: Git to GitHub {.unnumbered}
+
+See [Chapter 9](chapters/09-git-to-github.qmd).
+
+```bash
+git remote add origin <url> # link a remote
+git remote -v               # list remotes
+git push -u origin main     # first push (sets upstream)
+git push                    # send later commits
+git fetch                   # download, do not merge
+git pull                    # fetch + merge
+git clone <url>             # copy a repo locally
+```
+
+## Inspecting without changing {.unnumbered}
+
+Read-only commands are always safe to run while you orient yourself.
+
+```bash
+git status         # working-tree state
+git log            # commit history
+git diff           # unstaged changes
+git show           # one commit or tag in detail
+git remote -v      # configured remotes
+git push --dry-run # what a push would send
+```
+
+See the [reproducibility checklist](checklist.qmd) for the pre-submission
+pass that ties these together.

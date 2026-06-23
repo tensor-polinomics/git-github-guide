@@ -1,0 +1,10 @@
+$ git ls-files
+.gitignore
+README.md
+output/tables/did_main.txt
+pyproject.toml
+report.qmd
+scripts/00_make_data.py
+scripts/01_clean.py
+scripts/02_analysis.py
+uv.lock

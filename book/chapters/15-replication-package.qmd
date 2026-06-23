@@ -1,17 +1,351 @@
 # Shipping a Replication Package
 
-::: {.callout-note appearance="minimal"}
-**Chapter status:** stub. Scope: Repo structure (TIER / Gentzkow-Shapiro), README, CITATION.cff, license, tagged releases, Zenodo DOI, AEA data-editor requirements.
+Chapter 8 closed a promise from Chapter 1: a reproducible project is
+code, plus a recipe for its data, plus a locked environment. This
+chapter turns that working project into something you hand to a
+stranger. A **replication package** is the self-contained bundle a
+referee, a journal data editor, or a researcher three years from now
+downloads and runs to regenerate every number and figure in your paper.
+It is the same code, data recipe, and environment from Chapter 8, but
+organized, documented, licensed, frozen at a version, and deposited
+somewhere permanent.
+
+Almost nothing here is a new Git command. Tagging a version is Chapter 7;
+pushing that tag to GitHub is Chapter 9; turning it into a published
+release is Chapter 11; the data and environment rules are Chapter 8.
+What is new is the discipline of assembly: deciding what goes in, in
+what structure, with what documentation, so that "it reproduces on my
+machine" becomes "it reproduces on the data editor's machine."
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+The test a package must pass is blunt: a competent stranger, given only
+your package and no access to you, can reproduce your results. Not "the
+code is here somewhere" but "run these steps, in this environment, and
+Table 3 comes back." Every choice below serves that one test. If a step
+needs a tacit thing only you know, the package is not done.
 :::
 
-<!-- DRAFTING NOTES (remove on final)
-Running example: minimum-wage DiD project in ../sandbox.
-Tier each technical section with ::: {.tier-beginner} / {.tier-advanced}.
-Use PITFALL / RECOVERY / REPRODUCIBILITY callouts.
-Every command block: command + REAL output + one sentence why.
-Wrap code/terminal to ~64 chars. No em-dashes.
--->
+## What goes in: a defensible structure {.tier-beginner}
+
+The package should be legible before it is run. Two widely used
+conventions in the social sciences point the same way. The **TIER
+Protocol** (version 4.0) organizes a project into `Data/`, `Scripts/`,
+and `Output/`, driven by a single master script that runs the whole
+pipeline end to end (verified 2026-06-23). Gentzkow and Shapiro's *Code
+and Data for the Social Sciences* gives the principles behind that
+shape: separate inputs from outputs, give each step its own place, and
+automate the build so it runs top to bottom with no manual fiddling.
+
+The running example already has this shape. Looking at only the tracked
+files (not the generated data, which is rebuilt) shows the whole
+package:
+
+```bash
+$ git ls-files
+.gitignore
+README.md
+output/tables/did_main.txt
+pyproject.toml
+report.qmd
+scripts/00_make_data.py
+scripts/01_clean.py
+scripts/02_analysis.py
+uv.lock
+```
+
+Read that as a package. The `scripts/` run in numbered order
+(`00_make_data` then `01_clean` then `02_analysis`): for this small
+example, the numbered scripts play the role TIER assigns to a master
+script, a reader runs them top to bottom. `pyproject.toml`
+plus `uv.lock` are the locked environment (Chapter 8). `report.qmd` is
+the write-up. The raw and cleaned data are deliberately absent, kept out
+by `.gitignore`, because they rebuild from `00_make_data.py` under a
+fixed seed. The one committed output, `did_main.txt`, is the headline
+table, so a reader can diff what they regenerate against what you
+reported.
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+Numbered scripts that run in sequence are a poor researcher's master
+script, and they are enough. The reader needs exactly one thing: an
+unambiguous order to run things in. Whether you provide it as `00_`,
+`01_`, `02_` filenames, a `Makefile`, or a `run_all.sh`, the rule is the
+same: no human judgement about what to run next should be required.
+:::
+
+## A README a stranger can actually run {.tier-beginner}
+
+The README is the package's instruction manual, and it is where most
+replication attempts fail. The social-science data editors maintain a
+cross-journal **template README** (current version v1.1) that encodes
+what belongs there (verified 2026-06-23). Its use is strongly
+encouraged rather than strictly required, but its checklist is the
+useful part. A package README should state where the data come from,
+what data are provided and what are not, the software used *with the
+exact version numbers as run*, any extra packages and their versions,
+the hardware used, the wall-clock run time, and step-by-step
+instructions that separate data preparation from analysis, plus a map
+from each output file to the table or figure it produces.
+
+The example's own README already covers the runnable core: it ships no
+data, names the seeded rebuild, pins the environment, and states the
+result to expect.
+
+```markdown
+## Reproduce the running example
+
+The example ships no data; it rebuilds from a seeded
+generator under a locked uv environment.
+
+    uv run python scripts/00_make_data.py
+    uv run python scripts/01_clean.py
+    uv run python scripts/02_analysis.py
+
+The difference-in-differences estimate reproduces
+exactly: treat_post = -0.0189 (SE 0.0038), against a
+true simulated effect of -0.018.
+```
+
+The single most valuable line in any replication README is the expected
+result. Stating `treat_post = -0.0189` up front means a replicator knows
+instantly whether their run succeeded, instead of staring at output
+wondering if a small difference is a bug or a rounding artifact.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+The most common README failure is the unstated dependency: "just run the
+script" when the script needs a package, a data file, or an environment
+variable you never mention because it has always been present on your
+machine. The fix is mechanical: the locked environment (Chapter 8) is
+what makes the software list complete and honest, and the cleanest test
+of the README is to follow it yourself on a fresh clone, touching
+nothing you would not ship. If your own instructions do not work from a
+clean checkout, they will not work for a referee.
+:::
+
+## License and citation: the two small files {.tier-beginner}
+
+Two short files decide whether others may legally use your package and
+how they credit it. Without a license, the default is that no one may
+reuse your code at all, so the omission is not neutral. Research packages
+commonly carry two licenses because they contain two kinds of thing:
+permissive terms for the code (MIT, BSD, Apache-2.0) and a content
+license for the prose and figures (often Creative Commons). This book's
+own repository does exactly that, MIT for code and CC BY 4.0 for the
+writing, stated plainly in the README:
+
+```markdown
+- Code (scripts, tools/, the example) is released under
+  the MIT License. See LICENSE.
+- Book prose and figures are released under Creative
+  Commons Attribution 4.0 (CC BY 4.0).
+```
+
+Citation is the companion. A `CITATION.cff` file in the repository root,
+written in the Citation File Format, tells people how to cite the work,
+and GitHub reads it automatically: with `cff-version: 1.2.0` and the
+core fields present, GitHub shows a "Cite this repository" link in the
+sidebar and renders the metadata as APA and BibTeX (verified
+2026-06-23). The book's own file is the worked example:
+
+```yaml
+cff-version: 1.2.0
+message: "If you use this book or its example, please cite it as below."
+title: "Git and GitHub for Social Science Researchers"
+type: book
+authors:
+  - name: "tensor.polinomics"
+url: "https://github.com/tensor-polinomics/git-github-guide"
+license: CC-BY-4.0
+version: "0.1.0"
+date-released: "2026-06-21"
+```
+
+That file is plain text under version control like everything else, so
+the citation metadata travels with the code and updates in the same
+commits.
+
+## Freezing a version: the tagged release {.tier-advanced}
+
+A paper cites a *specific* state of the code, not whatever `main`
+happens to be the day a reader clones it. The mechanism is a tag
+(Chapter 7) promoted to a release (Chapter 11). The local half is an
+ordinary annotated tag, and it is fully reversible until you push it:
+
+```bash
+$ git tag -a v1.0.0 \
+    -m "Replication package for the minimum-wage DiD note"
+$ git tag -n
+baseline-4commits Four-commit baseline for the Ch.5/6/16 demos (pre-environment)
+v1.0.0          Replication package for the minimum-wage DiD note
+```
+
+The tag is a permanent, human-named pointer at one commit. Inspecting it
+confirms exactly what state it freezes:
+
+```bash
+$ git show v1.0.0 --stat
+tag v1.0.0
+Tagger: A Researcher <researcher@example.edu>
+Date:   Tue Jun 23 19:03:27 2026 +0000
+
+Replication package for the minimum-wage DiD note
+
+commit c1c408cdd55e49a24c9c1303c8d67468eba4d230
+Author: Pat Researcher <pat@example.edu>
+Date:   Mon Jun 22 02:10:36 2026 +0000
+
+    Pin the software environment with a uv lockfile
+```
+
+`v1.0.0` points at the environment-lock commit, so the frozen version is
+the complete code-plus-locked-environment state. Use semantic-style tags
+(`v1.0.0`) so a later correction can be `v1.0.1` without ambiguity about
+which version a result came from.
+
+::: {.callout-tip .recovery title="RECOVERY"}
+A local tag is cheap to fix before it is shared. Tagged the wrong commit?
+`git tag -d v1.0.0` deletes it and you re-tag. Moved it? Same delete and
+recreate. This easy reversibility ends the moment the tag is pushed and
+turned into a public release that others may have cited, which is the
+whole reason the publish step below is quarantined. Get the local tag
+right while it is still free to change.
+:::
+
+A GitHub **release** attaches that tag to a downloadable, citable
+artifact on the server (Chapter 11). Creating one changes public state
+and is the kind of action this book runs deliberately, never in a
+copy-paste block:
+
+::: {.callout-note appearance="minimal"}
+**Quarantined: publishing the release.** Run these one at a time, after
+the local tag is exactly right. Each changes public state.
+
+```text
+# push the tag to GitHub
+git push origin v1.0.0
+
+# create a release from it (gh CLI, or the web UI)
+gh release create v1.0.0 \
+  --title "v1.0.0 replication package" \
+  --notes "Code + locked environment for the DiD note."
+```
+
+`gh release create` publishes a tag the world can cite; treat it like
+any other hard-to-undo action and run it knowingly.
+:::
+
+## A permanent, citable DOI: Zenodo {.tier-advanced}
+
+A GitHub release can still be edited or deleted, and a repository can
+move or vanish. For the *version of record* behind a paper, you want a
+deposit that is permanent and carries a DOI. **Zenodo** integrates with
+GitHub for exactly this: you connect Zenodo to GitHub and switch a
+repository "on," and thereafter each new GitHub release triggers Zenodo
+to archive the repository at that tag and mint a DOI (verified
+2026-06-23). Zenodo issues two DOI kinds: a **version DOI** for each
+specific release, and a **concept DOI** that always resolves to the
+latest version. For reproducibility, cite the **version DOI**, because a
+result was produced by one specific version; reserve the concept DOI for
+referring to the software in general, when you do not mean a particular
+release. The default
+per-record limit is 100 files and 50 GB (raisable to 200 GB via the EU
+Open Research Repository), which is ample for a code package whose data
+rebuild from a script.
+
+Because a published Zenodo record is permanent and citable, this is the
+most consequential step in the chapter, and the book does not perform it.
+
+::: {.callout-warning .pitfall title="PITFALL"}
+A Zenodo DOI is forever. A published record cannot be deleted, only
+superseded by a new version, so the first DOI you mint must not point at
+a draft you are still revising. Mint the DOI when the package is actually
+final: the paper accepted, the results frozen, the README tested on a
+clean clone. Minting early to "get a DOI" leaves a permanent citable
+pointer to work you later changed, which is precisely the confusion DOIs
+exist to prevent.
+:::
+
+::: {.callout-note appearance="minimal"}
+**Quarantined: minting the DOI.** Documented, not run in this book. Do
+this only when the package is final.
+
+```text
+# one-time: at zenodo.org, log in with GitHub and flip
+# the repository switch to "on".
+
+# then, for the version you want archived, publish a
+# GitHub release (the quarantined step above). Zenodo
+# ingests it automatically and assigns the DOI.
+
+# finally, add the concept DOI badge to your README so
+# readers cite the archived version, not a moving branch.
+```
+
+No DOI was minted for this repository. A real release or DOI happens
+only on a deliberate decision that the package is final.
+:::
+
+## Meeting a journal's data editor {.tier-advanced}
+
+For many economics and finance journals the package is not optional and
+not self-graded. The **American Economic Association** requires authors
+of accepted empirical, simulation, or experimental work to deposit data,
+code, and documentation, and the AEA Data Editor verifies that the
+package actually reproduces the paper's results *as a condition of
+publication*: a package that fails the check holds up the article. The
+strongly encouraged, default home is the AEA Data and Code Repository at
+**openICPSR**; other trusted repositories are accepted if they meet the
+same display and reproducibility criteria (verified 2026-06-23). The
+Econometric Society and other social-science journals run closely
+related policies, which is why the cross-journal template README exists.
+
+Two requirements deserve emphasis because they connect back to earlier
+chapters. First, a **Data Availability Statement** is mandatory, and when
+data cannot be shared (confidential or identifying microdata, or data
+under a use agreement that bars redistribution), the statement must say
+so and explain why. That is the Chapter 6 rule, never commit restricted
+data, surfacing as a publication requirement: you ship the code that
+*would* process the data plus a precise description of how a reader
+obtains it, not the data itself. Second, the editor checks that the
+package *actually runs*, which is the locked environment and seeded
+rebuild from Chapter 8 doing their job under formal scrutiny.
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+A data availability statement is not a loophole for "the data are
+secret, trust me." It is a precise, checkable claim: which dataset, from
+which provider, under what access terms, at what cost or application
+process, so an authorized reader can obtain the same data and run your
+unchanged code. Restricted data is a reason to document access carefully,
+not a reason to skip reproducibility.
+:::
+
+## What you can now do
+
+You can take a working, reproducible project and ship it: organize it
+into a legible structure (TIER or Gentzkow-Shapiro), write a README that
+runs from a clean clone, license the code and the prose, add a
+`CITATION.cff` so people cite it correctly, freeze the exact state as a
+tagged release, and (when the work is truly final) archive it to a
+permanent DOI, all the way through a journal data editor's checks. None
+of it required a new Git concept, only the discipline to assemble what
+Chapters 6, 7, 8, 9, and 11 already gave you. Chapter 16 turns to a newer
+risk to all of this: what changes when an AI agent is driving Git.
 
 ## Try it yourself {.unnumbered}
 
-_Exercise tied to the running example will go here._
+Working in your clone of the running example:
+
+1. Run `git ls-files` and write a one-line gloss for each tracked path,
+   explaining what role it plays in the package (script, environment
+   lock, expected output, documentation). Note which files are
+   deliberately *absent* and why.
+2. Follow the README's reproduce steps from scratch on a fresh clone,
+   changing nothing you would not ship. Confirm `treat_post = -0.0189`
+   comes back. If anything failed, fix the README, not your memory.
+3. Tag the current state `v1.0.0` with an annotated tag, then inspect it
+   with `git show v1.0.0 --stat`. Now delete it with `git tag -d v1.0.0`
+   and explain in one sentence why deleting a local tag is safe but
+   deleting a published release or DOI is not.
+4. Draft a three-line Data Availability Statement for a hypothetical
+   version of this project that used confidential county employment
+   microdata instead of simulated data: name the (made-up) provider, the
+   access terms, and how a replicator would request it.

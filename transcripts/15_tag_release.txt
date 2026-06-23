@@ -1,0 +1,20 @@
+$ git tag -a v1.0.0 -m "Replication package for the minimum-wage DiD note"
+$ git tag -n
+baseline-4commits Four-commit baseline for the Ch.5/6/16 demos (pre-environment)
+v1.0.0          Replication package for the minimum-wage DiD note
+
+$ git show v1.0.0 --stat
+tag v1.0.0
+Tagger: A Researcher <researcher@example.edu>
+Date:   Tue Jun 23 19:03:27 2026 +0000
+
+Replication package for the minimum-wage DiD note
+
+commit c1c408cdd55e49a24c9c1303c8d67468eba4d230
+Author: Pat Researcher <pat@example.edu>
+Date:   Mon Jun 22 02:10:36 2026 +0000
+
+    Pin the software environment with a uv lockfile
+
+ pyproject.toml |   28 +
+ uv.lock        | 2364 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++

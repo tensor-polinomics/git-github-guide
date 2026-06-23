@@ -1,6 +1,71 @@
 # Reproducibility Checklist {.unnumbered}
 
-::: {.callout-note appearance="minimal"}
-**Status:** stub. One-page checklist a reader runs before circulating
-or submitting a replication package.
+Run this pass before you circulate a working paper or submit a
+replication package. Each item points to the chapter that explains it.
+The standard is the one from [Chapter 1](chapters/01-reproducibility.qmd):
+a competent stranger, given only your repository, can regenerate every
+result.
+
+## Code is versioned and clean {.unnumbered}
+
+- [ ] The project is a Git repository and the analysis code is committed
+  (not just sitting in a folder). See
+  [Chapter 5](chapters/05-git-beginners.qmd).
+- [ ] `git status -s` is clean: no uncommitted changes, no stray files.
+- [ ] History is honest: commit messages describe what changed, and no
+  commit silently mixes a refactor with a result change. See
+  [Chapter 16](chapters/16-ai-age.qmd).
+
+## Nothing forbidden is in the history {.unnumbered}
+
+- [ ] No data, credentials, or licensed material was ever committed, not
+  even in an old commit. Check with `git log` and
+  `git status --ignored -s`. See [Chapter 6](chapters/06-never-commit.qmd).
+- [ ] A `.gitignore` keeps data, secrets, and build noise out.
+- [ ] If a secret was ever exposed, it has been rotated, not just
+  removed from the latest commit. See
+  [Chapter 6](chapters/06-never-commit.qmd).
+
+## Data has a defined home {.unnumbered}
+
+See [Chapter 8](chapters/08-data-environments.qmd).
+
+- [ ] Raw data either rebuilds from a script with a fixed seed, or is
+  deposited somewhere citable (Zenodo, Dataverse, openICPSR) and
+  referenced, or, if restricted, is described in a Data Availability
+  Statement with access terms. See
+  [Chapter 15](chapters/15-replication-package.qmd).
+- [ ] Derived data are reproducible by-products, not committed artifacts.
+- [ ] Random seeds are fixed wherever simulation or sampling occurs.
+
+## The environment is locked {.unnumbered}
+
+See [Chapter 8](chapters/08-data-environments.qmd).
+
+- [ ] A real lockfile is committed (`uv.lock`, `renv.lock`, or a
+  `conda-lock` file), not just loose requirements.
+- [ ] The result reproduces from a clean clone under the locked
+  environment. The running example's invariant is `treat_post = -0.0189`.
+
+## The package is shippable {.unnumbered}
+
+See [Chapter 15](chapters/15-replication-package.qmd).
+
+- [ ] A README states the data source, the software and versions, the
+  run order, the expected results, and which output maps to which
+  exhibit.
+- [ ] A license is present (code and prose may need different ones), and
+  a `CITATION.cff` says how to cite the work.
+- [ ] The version behind the paper is frozen as a tagged release, and
+  (when the work is final) archived to a permanent DOI.
+
+::: {.callout-important .reproducibility title="REPRODUCIBILITY"}
+The only test that matters is the clean-clone test: clone the repository
+fresh into a new directory, follow your own README touching nothing else,
+and confirm the headline result returns. If it does, the package
+reproduces. If it does not, fix the package, not your memory of how it
+works. See [Chapter 1](chapters/01-reproducibility.qmd).
 :::
+
+See the [command cheat sheet](cheatsheet.qmd) for the commands behind
+each item.
