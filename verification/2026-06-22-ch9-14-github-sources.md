@@ -11,15 +11,16 @@ PENDING path-A captures, and DOCUMENTED-NOT-EXECUTED facts:
   nbdime 4.0.4 and jupytext 1.19.4 notebook-diff demos, including
   `nbdime config-git --enable` and `jupytext --set-formats`. Transcripts
   under `transcripts/09_*`, `12_*`, `14_*`.
-- PENDING on the user's Mac (path A; NOT yet captured, to fold in after
-  review): read-only `git remote -v` / `git ls-remote` /
-  `git push --dry-run` against the real repo; the read-only `gh` captures
-  (gh 2.95.0, account tensor-polinomics); and the live renv
-  init/snapshot/restore console + `renv.lock`. Until these land, the
-  chapters present these points as documented/instructional, not as
-  captured output, and the command lists live in RESUME.md's handover
-  section. No `09_real_remote`, `11_gh_readonly`, or `14_renv_*`
-  transcript exists yet.
+- EXECUTED on the user's Mac (path A, 2026-06-22): read-only
+  `git remote -v` / `git ls-remote` / `git push --dry-run` against the
+  real public repo; `gh --version`, `gh auth status`, `gh repo view`,
+  `gh pr list`, `gh run list`, and `gh issue list` with gh 2.95.0
+  authenticated as tensor-polinomics. Transcripts:
+  `transcripts/09_real_remote.txt`, `transcripts/11_gh_readonly.txt`.
+- PENDING on the user's Mac (path A; NOT yet captured): live renv
+  init/snapshot/restore console + `renv.lock`. Until this lands, the
+  Ch.14 renv block remains documented/instructional, not captured
+  output, and the command list lives in RESUME.md's handover section.
 - DOCUMENTED-NOT-EXECUTED and pinned below: GitHub web-UI flows
   (repo creation, license/.gitignore pickers, issues, PR review,
   protected branches/rulesets, the server-side "Create a pull request"
@@ -40,12 +41,15 @@ URL: https://cli.github.com/manual/
 Used in: Ch.11 (gh CLI), Ch.9/Ch.10 (read-only inspection commands).
 
 Verified claims: gh is GitHub's official CLI; v2.95.0 is current
-(packaged 2026-06-18), matching the user's installed Homebrew build.
-READ-ONLY/inspection subcommands used in the book and safe to hand the
-user as path-A capture lists: `gh auth status`, `gh repo view`,
-`gh pr list`, `gh pr view`, `gh pr diff`, `gh run list`, `gh run view`,
-`gh issue list`. STATE-MUTATING subcommands QUARANTINED for the user to
-run deliberately (never in a copy-paste block): `gh pr create`,
+(packaged 2026-06-18), matching the user's installed Homebrew build and
+the live `gh --version` capture in `transcripts/11_gh_readonly.txt`.
+READ-ONLY/inspection subcommands used in the book: `gh auth status`,
+`gh repo view`, `gh pr list`, `gh pr view`, `gh pr diff`, `gh run list`,
+`gh run view`, `gh issue list`. Live path-A capture confirms
+authentication as tensor-polinomics over SSH with repo scope; `gh pr
+list`, `gh run list`, and `gh issue list` returned no rows on the public
+repo at capture time. STATE-MUTATING subcommands QUARANTINED for the
+user to run deliberately (never in a copy-paste block): `gh pr create`,
 `gh pr merge`, `gh repo create`, `gh repo edit`, `gh release create`,
 `gh workflow run`, `gh issue create`. This is the CLAUDE.md gh rule
 (Ch.16 "human decides hard-to-undo actions") applied to our workflow.
@@ -283,8 +287,10 @@ operations are the ones already captured in earlier chapters.
 - 09_pull.txt           git pull fast-forward (sandbox)
 - 09_remote_show.txt    git remote show origin tracking (sandbox)
 - 09_push_again.txt     plain git push of a later commit (sandbox)
+- 09_real_remote.txt    real GitHub remote proof, read-only (path A)
 - 11_push_branch.txt    git push -u of a feature branch (sandbox)
 - 11_actions_yaml_check.txt  validate-book workflow YAML parse (sandbox)
+- 11_gh_readonly.txt    gh auth/repo/PR/run/issue inspection (path A)
 - 12_push_reject.txt    non-fast-forward push rejection (sandbox)
 - 12_pull_conflict.txt  pull -> merge conflict on shared file (sandbox)
 - 12_resolve_push.txt   resolve + commit + push (sandbox, path norm.)
@@ -294,7 +300,5 @@ operations are the ones already captured in earlier chapters.
 - 14_jupytext_pair.txt  jupytext --to .ipynb -> .py:percent (sandbox)
 - 14_nbdime_configgit.txt  nbdime config-git --enable drivers (sandbox)
 - 14_jupytext_pair2.txt  jupytext --set-formats pairing (sandbox)
-- (path A, PENDING; not captured yet) git remote -v / ls-remote /
-  push --dry-run on the
-  real repo; gh auth status / repo view / pr list / run list; renv
-  init/snapshot/restore console + renv.lock.
+- (path A, PENDING; not captured yet) renv init/snapshot/restore console
+  + renv.lock.

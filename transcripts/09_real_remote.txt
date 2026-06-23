@@ -1,0 +1,10 @@
+##### 09_real_remote #####
+$ git remote -v
+origin	git@github.com:tensor-polinomics/git-github-guide.git (fetch)
+origin	git@github.com:tensor-polinomics/git-github-guide.git (push)
+
+$ git ls-remote --heads origin
+20738677ce7e5059b3ad5d8b7fa922bad2cb2585	refs/heads/main
+
+$ git push --dry-run
+Everything up-to-date

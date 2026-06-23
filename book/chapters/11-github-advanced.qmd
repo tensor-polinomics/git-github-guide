@@ -9,9 +9,10 @@ push. It closes with `gh`, the command-line interface to all of it.
 
 Two honesty notes carry through. First, the **local** half of each
 workflow (pushing a branch, the commits a pull request will contain) is
-captured for real in the sandbox; the **server** half (the PR object,
-the review UI, the Actions run) is GitHub-side and is described from
-current documentation (verified 2026-06-22, logged in
+captured for real in the sandbox; read-only `gh` inspection is captured
+against this book's public GitHub repo; and the remaining state-changing
+server half (the PR object, review UI, Actions run, and release) is
+described from current documentation (verified 2026-06-22, logged in
 `verification/2026-06-22-ch9-14-github-sources.md`). Second, every
 state-changing GitHub action is quarantined: read-only `gh` commands
 appear in copy-paste boxes, but anything that creates, merges, or
@@ -192,8 +193,8 @@ workflow, pushing it, and editing branch rules are the deliberate steps.
 ## The gh CLI {.tier-advanced}
 
 `gh` is GitHub's official command-line tool (this book assumes a current
-build; v2.95.0 at the time of writing). It puts the web features above
-in the terminal, which is faster and scriptable. The division that
+build; v2.95.0 in the live capture below). It puts the web features
+above in the terminal, which is faster and scriptable. The division that
 matters is read versus write. **Read-only** inspection is safe to run
 anywhere and is how you check state without a browser:
 
@@ -204,6 +205,29 @@ gh pr list                 # open pull requests
 gh pr view 7               # one PR: description, checks, reviews
 gh pr diff 7               # the PR's diff, in the terminal
 gh run list                # recent Actions runs
+```
+
+Against this book's public repo, the read-only pass confirms the CLI
+account, protocol, token scopes, and current absence of open PRs, Actions
+runs, and issues:
+
+```bash
+$ gh auth status
+github.com
+  - Logged in to github.com account tensor-polinomics (keyring)
+  - Active account: true
+  - Git operations protocol: ssh
+  - Token: gho_************************************
+  - Token scopes: 'admin:public_key', 'gist', 'read:org', 'repo'
+
+$ gh pr list
+(no output: no open pull requests)
+
+$ gh run list
+(no output: no workflow runs)
+
+$ gh issue list
+(no output: no open issues)
 ```
 
 ::: {.callout-warning .pitfall title="PITFALL"}

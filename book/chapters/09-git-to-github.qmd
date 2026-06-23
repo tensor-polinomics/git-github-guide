@@ -234,19 +234,25 @@ tagged snapshot into an archived, DOI-minted release.
 :::
 
 ::: {.callout-note appearance="minimal"}
-**Against the real repository (read-only).** These commands inspect the
-book's actual GitHub remote without changing anything, and confirm the
-behaviour above against GitHub rather than a local stand-in. Run them in
-a clone of a real repo:
+**Against the real repository (read-only).** These commands inspected
+the book's actual GitHub remote without changing anything, and confirm
+the behaviour above against GitHub rather than a local stand-in:
 
 ```bash
-git remote -v                 # the real github.com URL
-git ls-remote --heads origin  # branches the server has
-git push --dry-run            # what a push WOULD send, sends nothing
+$ git remote -v
+origin	git@github.com:tensor-polinomics/git-github-guide.git (fetch)
+origin	git@github.com:tensor-polinomics/git-github-guide.git (push)
+
+$ git ls-remote --heads origin
+20738677ce7e5059b3ad5d8b7fa922bad2cb2585	refs/heads/main
+
+$ git push --dry-run
+Everything up-to-date
 ```
 
 `git push --dry-run` is the safe way to preview a push: it reports the
-commit range it would transfer and exits without sending anything.
+commit range it would transfer, or says nothing needs to move, and exits
+without sending anything.
 :::
 
 ## What you can now do
